@@ -1,14 +1,62 @@
+import Link from "next/link";
+import { DeletePropertyButton } from "@/components/dashboard/delete-property-button";
+import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/require-role";
+import { getProperties } from "@/lib/properties/data";
 
 export default async function PropertiesPage() {
   await requireRole(["admin"]);
+  const properties = await getProperties();
 
   return (
-    <div>
-      <h1 className="font-serif text-3xl">Propiedades</h1>
-      <p className="mt-4 text-muted-foreground">
-        Próximamente: gestión completa de propiedades (CRUD).
-      </p>
+    <div className="flex flex-col gap-8">
+      <div className="flex items-center justify-between">
+        <h1 className="font-serif text-3xl">Propiedades</h1>
+        <Button variant="primary" href="/dashboard/properties/new">
+          Nueva Propiedad
+        </Button>
+      </div>
+
+      {properties.length === 0 ? (
+        <p className="text-muted-foreground">No hay propiedades cargadas todavía.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-foreground/20 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                <th className="py-3 pr-4">Título</th>
+                <th className="py-3 pr-4">Precio</th>
+                <th className="py-3 pr-4">Estado</th>
+                <th className="py-3 pr-4">Actualizado</th>
+                <th className="py-3 pr-4">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {properties.map((property) => (
+                <tr key={property.id} className="border-b border-foreground/10">
+                  <td className="py-3 pr-4">{property.title}</td>
+                  <td className="py-3 pr-4">
+                    {property.currency} {property.price.toLocaleString("es-UY")}
+                  </td>
+                  <td className="py-3 pr-4 capitalize">{property.status}</td>
+                  <td className="py-3 pr-4">{new Date(property.updatedAt).toLocaleDateString("es-UY")}</td>
+                  <td className="py-3 pr-4">
+                    <div className="flex items-center gap-4">
+                      <Link
+                        href={`/dashboard/properties/${property.id}/edit`}
+                        className="text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-accent"
+                      >
+                        Editar
+                      </Link>
+                      <DeletePropertyButton id={property.id} />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
