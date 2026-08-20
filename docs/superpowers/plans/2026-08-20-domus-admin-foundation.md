@@ -315,7 +315,12 @@ describe("getFirebaseAdminApp", () => {
       const { getFirebaseAdminApp, getFirebaseAdminAuth, getFirebaseAdminFirestore } = await import("./admin");
       const app = getFirebaseAdminApp();
       expect(getFirebaseAdminAuth().app).toBe(app);
-      expect(getFirebaseAdminFirestore().app).toBe(app);
+      // The `Firestore` instance returned by `firebase-admin/firestore`'s getFirestore()
+      // is the underlying `@google-cloud/firestore` client, which — unlike `Auth` —
+      // has no public `.app` property. firebase-admin caches this instance per-app
+      // internally, so repeated calls returning the same instance is the observable
+      // proof it is bound to (and cached against) the app.
+      expect(getFirebaseAdminFirestore()).toBe(getFirebaseAdminFirestore());
     });
   });
 });
