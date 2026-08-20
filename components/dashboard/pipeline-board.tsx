@@ -3,6 +3,8 @@
 import {
   DndContext,
   type DragEndEvent,
+  KeyboardCode,
+  KeyboardSensor,
   PointerSensor,
   useDroppable,
   useSensor,
@@ -13,21 +15,12 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Role } from "@/lib/auth/rbac";
 import { updateLeadStatus } from "@/lib/leads/actions";
+import { LEAD_STATUSES } from "@/lib/leads/constants";
 import type { Lead, LeadStatus } from "@/lib/leads/types";
 import type { TeamMember } from "@/lib/team/data";
 import { LeadCard } from "./lead-card";
 import { LeadDetailModal } from "./lead-detail-modal";
 import { NewLeadModal } from "./new-lead-modal";
-
-const COLUMNS: { status: LeadStatus; label: string }[] = [
-  { status: "new", label: "Nuevo" },
-  { status: "contacted", label: "Contactado" },
-  { status: "qualified", label: "Calificado" },
-  { status: "visit_scheduled", label: "Visita Agendada" },
-  { status: "negotiation", label: "Negociación" },
-  { status: "won", label: "Ganado" },
-  { status: "lost", label: "Perdido" },
-];
 
 function Column({
   status,
@@ -75,7 +68,23 @@ export function PipelineBoard({
   const [leads, setLeads] = useState(initialLeads);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [creating, setCreating] = useState(false);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  // Passing `sensors` replaces dnd-kit's defaults, so KeyboardSensor must be
+  // listed explicitly or keyboard dragging silently stops working.
+  //
+  // Its default start keys are Space *and* Enter, which would leave no key free
+  // to open the lead detail modal. Space starts a drag; Enter is left to
+  // LeadCard's onKeyDown for opening the modal (Enter still ends an in-flight
+  // drag, and Escape still cancels one).
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, {
+      keyboardCodes: {
+        start: [KeyboardCode.Space],
+        cancel: [KeyboardCode.Esc],
+        end: [KeyboardCode.Space, KeyboardCode.Enter, KeyboardCode.Tab],
+      },
+    }),
+  );
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -115,12 +124,12 @@ export function PipelineBoard({
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {COLUMNS.map((column) => (
+          {LEAD_STATUSES.map((column) => (
             <Column
-              key={column.status}
-              status={column.status}
+              key={column.value}
+              status={column.value}
               label={column.label}
-              leads={leads.filter((lead) => lead.status === column.status)}
+              leads={leads.filter((lead) => lead.status === column.value)}
               onCardClick={setSelectedLead}
             />
           ))}

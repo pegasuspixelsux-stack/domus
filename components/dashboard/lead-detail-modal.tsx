@@ -4,33 +4,9 @@ import { type FormEvent, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import type { Role } from "@/lib/auth/rbac";
 import { addActivity, fetchLeadActivities, reassignLead, updateLeadStatus } from "@/lib/leads/actions";
+import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, LEAD_STATUSES } from "@/lib/leads/constants";
 import type { Activity, ActivityType, Lead, LeadStatus } from "@/lib/leads/types";
 import type { TeamMember } from "@/lib/team/data";
-
-const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
-  { value: "new", label: "Nuevo" },
-  { value: "contacted", label: "Contactado" },
-  { value: "qualified", label: "Calificado" },
-  { value: "visit_scheduled", label: "Visita Agendada" },
-  { value: "negotiation", label: "Negociación" },
-  { value: "won", label: "Ganado" },
-  { value: "lost", label: "Perdido" },
-];
-
-const ACTIVITY_TYPE_OPTIONS: { value: ActivityType; label: string }[] = [
-  { value: "call", label: "Llamada" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "email", label: "Correo" },
-  { value: "note", label: "Nota" },
-];
-
-const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
-  call: "Llamada",
-  whatsapp: "WhatsApp",
-  email: "Correo",
-  note: "Nota",
-  status_change: "Cambio de Estado",
-};
 
 export function LeadDetailModal({
   lead,
@@ -141,7 +117,7 @@ export function LeadDetailModal({
               onChange={(event) => handleStatusChange(event.target.value as LeadStatus)}
               className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
             >
-              {STATUS_OPTIONS.map((option) => (
+              {LEAD_STATUSES.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -201,7 +177,7 @@ export function LeadDetailModal({
             onChange={(event) => setNewActivityType(event.target.value as ActivityType)}
             className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
           >
-            {ACTIVITY_TYPE_OPTIONS.map((option) => (
+            {ACTIVITY_TYPES.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

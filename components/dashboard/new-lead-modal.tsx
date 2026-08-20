@@ -29,10 +29,31 @@ export function NewLeadModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <form action={formAction} className="flex flex-col gap-6">
-          <Field label="Nombre" name="name" error={state.errors?.name} />
-          <Field label="Correo Electrónico" name="email" type="email" error={state.errors?.email} />
-          <Field label="Teléfono" name="phone" error={state.errors?.phone} />
-          <Field label="Origen" name="source" error={state.errors?.source} />
+          <Field
+            label="Nombre"
+            name="name"
+            error={state.errors?.name}
+            defaultValue={state.values?.name}
+          />
+          <Field
+            label="Correo Electrónico"
+            name="email"
+            type="email"
+            error={state.errors?.email}
+            defaultValue={state.values?.email}
+          />
+          <Field
+            label="Teléfono"
+            name="phone"
+            error={state.errors?.phone}
+            defaultValue={state.values?.phone}
+          />
+          <Field
+            label="Origen"
+            name="source"
+            error={state.errors?.source}
+            defaultValue={state.values?.source}
+          />
 
           <Button type="submit" variant="primary" disabled={pending} className="w-full">
             {pending ? "Guardando…" : "Crear Lead"}
@@ -48,11 +69,13 @@ function Field({
   name,
   type = "text",
   error,
+  defaultValue,
 }: {
   label: string;
   name: string;
   type?: string;
   error?: string;
+  defaultValue?: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -63,6 +86,7 @@ function Field({
         id={name}
         name={name}
         type={type}
+        defaultValue={defaultValue}
         className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
       />
       {error && (

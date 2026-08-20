@@ -4,25 +4,23 @@ import { FieldValue } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require-role";
 import { getFirebaseAdminFirestore } from "@/lib/firebase/admin";
+import { ACTIVITY_TYPES, STATUS_LABELS } from "./constants";
 import { getActivities } from "./data";
 import { validateLeadInput } from "./validation";
 import type { Activity, ActivityType, LeadStatus } from "./types";
 
 const COLLECTION = "leads";
-
-const STATUS_LABELS: Record<LeadStatus, string> = {
-  new: "Nuevo",
-  contacted: "Contactado",
-  qualified: "Calificado",
-  visit_scheduled: "Visita Agendada",
-  negotiation: "Negociación",
-  won: "Ganado",
-  lost: "Perdido",
-};
+const MAX_NOTE_LENGTH = 2000;
 
 export interface LeadActionState {
   errors?: Record<string, string>;
   success?: boolean;
+  values?: {
+    name: string;
+    email: string;
+    phone: string;
+    source: string;
+  };
 }
 
 function extractInput(formData: FormData) {
@@ -42,7 +40,9 @@ export async function createLead(
   const result = validateLeadInput(extractInput(formData));
 
   if (!result.valid) {
-    return { errors: result.errors };
+    // Echo the raw submission back: React 19 resets uncontrolled inputs after
+    // any action completes, so without this a single field error wipes the form.
+    return { errors: result.errors, values: extractInput(formData) };
   }
 
   await getFirebaseAdminFirestore()
@@ -112,9 +112,18 @@ export async function addActivity(
   note: string,
 ): Promise<void> {
   // Validate type at runtime (status_change is system-only)
-  const validTypes: ActivityType[] = ["call", "whatsapp", "email", "note"];
+  const validTypes: ActivityType[] = ACTIVITY_TYPES.map((entry) => entry.value);
   if (!validTypes.includes(type)) {
     throw new Error("invalid-activity-type");
+  }
+
+  // Validate the note at runtime too — a direct call bypasses the client guard.
+  const trimmedNote = note.trim();
+  if (!trimmedNote) {
+    throw new Error("empty-note");
+  }
+  if (trimmedNote.length > MAX_NOTE_LENGTH) {
+    throw new Error("note-too-long");
   }
 
   const { session, firestore } = await assertCanManageLead(leadId);
@@ -125,7 +134,7 @@ export async function addActivity(
     .collection("activities")
     .add({
       type,
-      note,
+      note: trimmedNote,
       createdAt: FieldValue.serverTimestamp(),
       createdBy: session.uid,
     });
@@ -136,13 +145,27 @@ export async function addActivity(
 export async function reassignLead(leadId: string, newAssigneeUid: string): Promise<void> {
   await requireRole(["admin"]);
 
-  await getFirebaseAdminFirestore()
-    .collection(COLLECTION)
-    .doc(leadId)
-    .update({
-      assignedTo: newAssigneeUid,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+  const firestore = getFirebaseAdminFirestore();
+  const leadRef = firestore.collection(COLLECTION).doc(leadId);
+
+  // `update()` on a missing doc throws NOT_FOUND; read first so the failure is
+  // an explicit, catchable error rather than a raw Firestore code.
+  const leadDoc = await leadRef.get();
+  if (!leadDoc.exists) {
+    throw new Error("lead-not-found");
+  }
+
+  // Reassigning to a nonexistent or deactivated user orphans the lead: it
+  // disappears from every board and can't be recovered through the UI.
+  const userDoc = await firestore.collection("users").doc(newAssigneeUid).get();
+  if (!userDoc.exists || userDoc.data()?.active === false) {
+    throw new Error("invalid-assignee");
+  }
+
+  await leadRef.update({
+    assignedTo: newAssigneeUid,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
 
   revalidatePath("/dashboard/pipeline");
 }

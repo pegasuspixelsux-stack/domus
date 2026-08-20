@@ -18,5 +18,10 @@ function toTeamMember(uid: string, data: DocumentData): TeamMember {
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
   const snapshot = await getFirebaseAdminFirestore().collection("users").get();
-  return snapshot.docs.map((doc) => toTeamMember(doc.id, doc.data()));
+  return snapshot.docs
+    // Deactivated users can't log in, so they must never be offered as an
+    // assignee. Missing/undefined `active` is treated as active for backward
+    // compatibility with pre-existing user docs.
+    .filter((doc) => doc.data().active !== false)
+    .map((doc) => toTeamMember(doc.id, doc.data()));
 }
