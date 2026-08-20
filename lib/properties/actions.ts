@@ -1,0 +1,85 @@
+"use server";
+
+import { FieldValue } from "firebase-admin/firestore";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { requireRole } from "@/lib/auth/require-role";
+import { getFirebaseAdminFirestore } from "@/lib/firebase/admin";
+import { validatePropertyInput } from "./validation";
+
+const COLLECTION = "properties";
+
+export interface PropertyActionState {
+  errors?: Record<string, string>;
+}
+
+function extractInput(formData: FormData) {
+  return {
+    title: String(formData.get("title") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    price: Number(formData.get("price")),
+    currency: String(formData.get("currency") ?? ""),
+    location: String(formData.get("location") ?? ""),
+    tag: String(formData.get("tag") ?? ""),
+    status: String(formData.get("status") ?? ""),
+    images: formData.getAll("images").map(String),
+    features: formData.getAll("features").map(String),
+    bedrooms: Number(formData.get("bedrooms")),
+    bathrooms: Number(formData.get("bathrooms")),
+    areaM2: Number(formData.get("areaM2")),
+  };
+}
+
+export async function createProperty(
+  _prevState: PropertyActionState,
+  formData: FormData,
+): Promise<PropertyActionState> {
+  const session = await requireRole(["admin"]);
+  const result = validatePropertyInput(extractInput(formData));
+
+  if (!result.valid) {
+    return { errors: result.errors };
+  }
+
+  await getFirebaseAdminFirestore()
+    .collection(COLLECTION)
+    .add({
+      ...result.data,
+      createdBy: session.uid,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+  revalidatePath("/dashboard/properties");
+  redirect("/dashboard/properties");
+}
+
+export async function updateProperty(
+  id: string,
+  _prevState: PropertyActionState,
+  formData: FormData,
+): Promise<PropertyActionState> {
+  await requireRole(["admin"]);
+  const result = validatePropertyInput(extractInput(formData));
+
+  if (!result.valid) {
+    return { errors: result.errors };
+  }
+
+  await getFirebaseAdminFirestore()
+    .collection(COLLECTION)
+    .doc(id)
+    .update({
+      ...result.data,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+  revalidatePath("/dashboard/properties");
+  redirect("/dashboard/properties");
+}
+
+export async function deleteProperty(id: string): Promise<void> {
+  await requireRole(["admin"]);
+  await getFirebaseAdminFirestore().collection(COLLECTION).doc(id).delete();
+  revalidatePath("/dashboard/properties");
+}
