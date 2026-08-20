@@ -11,6 +11,33 @@ const COLLECTION = "properties";
 
 export interface PropertyActionState {
   errors?: Record<string, string>;
+  values?: {
+    title: string;
+    description: string;
+    price: string;
+    currency: string;
+    location: string;
+    tag: string;
+    status: string;
+    bedrooms: string;
+    bathrooms: string;
+    areaM2: string;
+  };
+}
+
+function extractRawValues(formData: FormData): NonNullable<PropertyActionState["values"]> {
+  return {
+    title: String(formData.get("title") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    price: String(formData.get("price") ?? ""),
+    currency: String(formData.get("currency") ?? ""),
+    location: String(formData.get("location") ?? ""),
+    tag: String(formData.get("tag") ?? ""),
+    status: String(formData.get("status") ?? ""),
+    bedrooms: String(formData.get("bedrooms") ?? ""),
+    bathrooms: String(formData.get("bathrooms") ?? ""),
+    areaM2: String(formData.get("areaM2") ?? ""),
+  };
 }
 
 function extractInput(formData: FormData) {
@@ -38,7 +65,7 @@ export async function createProperty(
   const result = validatePropertyInput(extractInput(formData));
 
   if (!result.valid) {
-    return { errors: result.errors };
+    return { errors: result.errors, values: extractRawValues(formData) };
   }
 
   await getFirebaseAdminFirestore()
@@ -63,7 +90,7 @@ export async function updateProperty(
   const result = validatePropertyInput(extractInput(formData));
 
   if (!result.valid) {
-    return { errors: result.errors };
+    return { errors: result.errors, values: extractRawValues(formData) };
   }
 
   await getFirebaseAdminFirestore()

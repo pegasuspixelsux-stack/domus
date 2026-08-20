@@ -26,7 +26,9 @@ export function PropertyForm({
   const [state, formAction, pending] = useActionState<PropertyActionState, FormData>(action, {});
   const [features, setFeatures] = useState<string[]>(property?.features ?? []);
   const [featureInput, setFeatureInput] = useState("");
-  const [images, setImages] = useState<string[]>(property?.images ?? [""]);
+  const [images, setImages] = useState<{ id: string; value: string }[]>(
+    (property?.images ?? [""]).map((value) => ({ id: crypto.randomUUID(), value })),
+  );
 
   function addFeature() {
     const value = featureInput.trim();
@@ -40,21 +42,26 @@ export function PropertyForm({
     setFeatures(features.filter((f) => f !== value));
   }
 
-  function updateImage(index: number, value: string) {
-    setImages(images.map((img, i) => (i === index ? value : img)));
+  function updateImage(id: string, value: string) {
+    setImages(images.map((img) => (img.id === id ? { ...img, value } : img)));
   }
 
   function addImageRow() {
-    setImages([...images, ""]);
+    setImages([...images, { id: crypto.randomUUID(), value: "" }]);
   }
 
-  function removeImageRow(index: number) {
-    setImages(images.filter((_, i) => i !== index));
+  function removeImageRow(id: string) {
+    setImages(images.filter((img) => img.id !== id));
   }
 
   return (
     <form action={formAction} className="flex max-w-2xl flex-col gap-6">
-      <Field label="Título" name="title" defaultValue={property?.title} error={state.errors?.title} />
+      <Field
+        label="Título"
+        name="title"
+        defaultValue={state.values?.title ?? property?.title}
+        error={state.errors?.title}
+      />
 
       <div className="flex flex-col gap-2">
         <label htmlFor="description" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
@@ -64,7 +71,7 @@ export function PropertyForm({
           id="description"
           name="description"
           rows={4}
-          defaultValue={property?.description}
+          defaultValue={state.values?.description ?? property?.description}
           className="w-full border-b border-foreground/40 bg-transparent px-0 py-2 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
         />
         {state.errors?.description && (
@@ -75,17 +82,33 @@ export function PropertyForm({
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <Field label="Precio" name="price" type="number" defaultValue={property?.price} error={state.errors?.price} />
+        <Field
+          label="Precio"
+          name="price"
+          type="number"
+          defaultValue={state.values?.price ?? property?.price}
+          error={state.errors?.price}
+        />
         <Field
           label="Moneda"
           name="currency"
-          defaultValue={property?.currency ?? "USD"}
+          defaultValue={state.values?.currency ?? property?.currency ?? "USD"}
           error={state.errors?.currency}
         />
       </div>
 
-      <Field label="Ubicación" name="location" defaultValue={property?.location} error={state.errors?.location} />
-      <Field label="Etiqueta" name="tag" defaultValue={property?.tag} error={state.errors?.tag} />
+      <Field
+        label="Ubicación"
+        name="location"
+        defaultValue={state.values?.location ?? property?.location}
+        error={state.errors?.location}
+      />
+      <Field
+        label="Etiqueta"
+        name="tag"
+        defaultValue={state.values?.tag ?? property?.tag}
+        error={state.errors?.tag}
+      />
 
       <div className="flex flex-col gap-2">
         <label htmlFor="status" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
@@ -94,7 +117,7 @@ export function PropertyForm({
         <select
           id="status"
           name="status"
-          defaultValue={property?.status ?? "available"}
+          defaultValue={state.values?.status ?? property?.status ?? "available"}
           className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
         >
           {STATUS_OPTIONS.map((option) => (
@@ -115,21 +138,23 @@ export function PropertyForm({
           label="Dormitorios"
           name="bedrooms"
           type="number"
-          defaultValue={property?.bedrooms}
+          required
+          defaultValue={state.values?.bedrooms ?? property?.bedrooms}
           error={state.errors?.bedrooms}
         />
         <Field
           label="Baños"
           name="bathrooms"
           type="number"
-          defaultValue={property?.bathrooms}
+          required
+          defaultValue={state.values?.bathrooms ?? property?.bathrooms}
           error={state.errors?.bathrooms}
         />
         <Field
           label="Superficie (m²)"
           name="areaM2"
           type="number"
-          defaultValue={property?.areaM2}
+          defaultValue={state.values?.areaM2 ?? property?.areaM2}
           error={state.errors?.areaM2}
         />
       </div>
@@ -169,18 +194,18 @@ export function PropertyForm({
 
       <div className="flex flex-col gap-2">
         <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Imágenes (URL)</span>
-        {images.map((image, index) => (
-          <div key={index} className="flex items-center gap-2">
+        {images.map((image) => (
+          <div key={image.id} className="flex items-center gap-2">
             <input
               type="text"
               name="images"
-              value={image}
-              onChange={(event) => updateImage(index, event.target.value)}
+              value={image.value}
+              onChange={(event) => updateImage(image.id, event.target.value)}
               placeholder="https://..."
               className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
             />
             {images.length > 1 && (
-              <button type="button" onClick={() => removeImageRow(index)} className="text-muted-foreground hover:text-accent">
+              <button type="button" onClick={() => removeImageRow(image.id)} className="text-muted-foreground hover:text-accent">
                 ×
               </button>
             )}
@@ -213,12 +238,14 @@ function Field({
   type = "text",
   defaultValue,
   error,
+  required,
 }: {
   label: string;
   name: string;
   type?: string;
   defaultValue?: string | number;
   error?: string;
+  required?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -229,6 +256,7 @@ function Field({
         id={name}
         name={name}
         type={type}
+        required={required}
         defaultValue={defaultValue}
         className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
       />
