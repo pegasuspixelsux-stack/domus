@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { RevealGroup, RevealGroupItem } from "@/components/ui/reveal-group";
 import { SectionLabel } from "@/components/ui/section-label";
@@ -35,7 +36,12 @@ export function CtaFooter() {
 
       <div className="mx-auto mt-24 flex max-w-[1600px] flex-col items-center justify-between gap-4 border-t border-background/10 pt-8 text-[10px] tracking-[0.2em] text-background/50 uppercase sm:flex-row">
         <span>© 2026 Domus Punta del Este. Todos los derechos reservados.</span>
-        <span>Propiedades de ocio e inversión.</span>
+        <div className="flex items-center gap-6">
+          <span>Propiedades de ocio e inversión.</span>
+          <Link href="/login" className="transition-colors duration-500 hover:text-accent">
+            Acceso Equipo
+          </Link>
+        </div>
       </div>
     </section>
   );

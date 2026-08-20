@@ -1,6 +1,7 @@
 "use client";
 
 import { signInWithEmailAndPassword } from "firebase/auth";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -65,9 +66,17 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="password" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Contraseña
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            Contraseña
+          </label>
+          <Link
+            href="/forgot-password"
+            className="text-xs text-muted-foreground transition-colors duration-500 hover:text-accent"
+          >
+            ¿Olvidó su contraseña?
+          </Link>
+        </div>
         <input
           id="password"
           type="password"
