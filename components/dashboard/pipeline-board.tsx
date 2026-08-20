@@ -1,0 +1,152 @@
+"use client";
+
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import type { Role } from "@/lib/auth/rbac";
+import { updateLeadStatus } from "@/lib/leads/actions";
+import type { Lead, LeadStatus } from "@/lib/leads/types";
+import type { TeamMember } from "@/lib/team/data";
+import { LeadCard } from "./lead-card";
+import { LeadDetailModal } from "./lead-detail-modal";
+import { NewLeadModal } from "./new-lead-modal";
+
+const COLUMNS: { status: LeadStatus; label: string }[] = [
+  { status: "new", label: "Nuevo" },
+  { status: "contacted", label: "Contactado" },
+  { status: "qualified", label: "Calificado" },
+  { status: "visit_scheduled", label: "Visita Agendada" },
+  { status: "negotiation", label: "Negociación" },
+  { status: "won", label: "Ganado" },
+  { status: "lost", label: "Perdido" },
+];
+
+function Column({
+  status,
+  label,
+  leads,
+  onCardClick,
+}: {
+  status: LeadStatus;
+  label: string;
+  leads: Lead[];
+  onCardClick: (lead: Lead) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex w-72 shrink-0 flex-col gap-3 border-t-4 p-3 transition-colors duration-500 ${
+        isOver ? "border-t-accent bg-muted-background/50" : "border-t-foreground/20"
+      }`}
+    >
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-xs tracking-[0.2em] text-muted-foreground uppercase">{label}</h2>
+        <span className="text-xs text-muted-foreground">{leads.length}</span>
+      </div>
+      <div className="flex flex-col gap-3">
+        {leads.map((lead) => (
+          <LeadCard key={lead.id} lead={lead} onClick={() => onCardClick(lead)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function PipelineBoard({
+  leads: initialLeads,
+  teamMembers,
+  currentRole,
+}: {
+  leads: Lead[];
+  teamMembers: TeamMember[];
+  currentRole: Role;
+}) {
+  const router = useRouter();
+  const [leads, setLeads] = useState(initialLeads);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [creating, setCreating] = useState(false);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLeads(initialLeads);
+  }, [initialLeads]);
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const leadId = String(active.id);
+    const newStatus = over.id as LeadStatus;
+    const lead = leads.find((entry) => entry.id === leadId);
+    if (!lead || lead.status === newStatus) return;
+
+    const previousStatus = lead.status;
+    setLeads((current) => current.map((entry) => (entry.id === leadId ? { ...entry, status: newStatus } : entry)));
+
+    try {
+      await updateLeadStatus(leadId, newStatus);
+      router.refresh();
+    } catch {
+      setLeads((current) =>
+        current.map((entry) => (entry.id === leadId ? { ...entry, status: previousStatus } : entry)),
+      );
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h1 className="font-serif text-3xl">Pipeline de Leads</h1>
+        <Button variant="primary" onClick={() => setCreating(true)}>
+          Nuevo Lead
+        </Button>
+      </div>
+
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {COLUMNS.map((column) => (
+            <Column
+              key={column.status}
+              status={column.status}
+              label={column.label}
+              leads={leads.filter((lead) => lead.status === column.status)}
+              onCardClick={setSelectedLead}
+            />
+          ))}
+        </div>
+      </DndContext>
+
+      {selectedLead && (
+        <LeadDetailModal
+          lead={selectedLead}
+          teamMembers={teamMembers}
+          currentRole={currentRole}
+          onClose={() => {
+            setSelectedLead(null);
+            router.refresh();
+          }}
+        />
+      )}
+
+      {creating && (
+        <NewLeadModal
+          onClose={() => {
+            setCreating(false);
+            router.refresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}

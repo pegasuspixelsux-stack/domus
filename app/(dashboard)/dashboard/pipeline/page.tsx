@@ -1,14 +1,11 @@
+import { PipelineBoard } from "@/components/dashboard/pipeline-board";
 import { requireRole } from "@/lib/auth/require-role";
+import { getLeads } from "@/lib/leads/data";
+import { getTeamMembers } from "@/lib/team/data";
 
 export default async function PipelinePage() {
-  await requireRole(["admin", "sales"]);
+  const session = await requireRole(["admin", "sales"]);
+  const [leads, teamMembers] = await Promise.all([getLeads(session), getTeamMembers()]);
 
-  return (
-    <div>
-      <h1 className="font-serif text-3xl">Pipeline de Leads</h1>
-      <p className="mt-4 text-muted-foreground">
-        Próximamente: vista Kanban/tabla de seguimiento de clientes.
-      </p>
-    </div>
-  );
+  return <PipelineBoard leads={leads} teamMembers={teamMembers} currentRole={session.role} />;
 }
