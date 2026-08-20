@@ -28,14 +28,21 @@ export function LoginForm() {
         body: JSON.stringify({ idToken }),
       });
 
+      if (response.status === 403) {
+        throw new Error("not-authorized");
+      }
       if (!response.ok) {
         throw new Error("session-create-failed");
       }
 
       router.push("/dashboard");
       router.refresh();
-    } catch {
-      setError("Correo o contraseña incorrectos.");
+    } catch (err) {
+      if (err instanceof Error && err.message === "not-authorized") {
+        setError("Su cuenta no tiene acceso habilitado. Contacte a un administrador.");
+      } else {
+        setError("Correo o contraseña incorrectos.");
+      }
       setLoading(false);
     }
   }
@@ -72,7 +79,11 @@ export function LoginForm() {
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
 
       <Button type="submit" variant="primary" className="w-full" disabled={loading}>
         {loading ? "Ingresando…" : "Ingresar"}

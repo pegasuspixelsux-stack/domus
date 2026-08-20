@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getFirebaseAdminAuth } from "@/lib/firebase/admin";
+import { getFirebaseAdminAuth, getFirebaseAdminFirestore } from "@/lib/firebase/admin";
 import { SESSION_COOKIE_NAME, SESSION_EXPIRES_IN_MS } from "@/lib/auth/session";
 
 export async function POST(request: Request) {
@@ -12,7 +12,17 @@ export async function POST(request: Request) {
 
   try {
     const auth = getFirebaseAdminAuth();
-    await auth.verifyIdToken(idToken);
+    const decoded = await auth.verifyIdToken(idToken);
+
+    const userDoc = await getFirebaseAdminFirestore().doc(`users/${decoded.uid}`).get();
+    const userData = userDoc.data() as { role?: unknown; active?: unknown } | undefined;
+    const hasValidRole = userData?.role === "admin" || userData?.role === "sales";
+    const isActive = userData?.active !== false;
+
+    if (!userDoc.exists || !hasValidRole || !isActive) {
+      return NextResponse.json({ error: "not-authorized" }, { status: 403 });
+    }
+
     const sessionCookie = await auth.createSessionCookie(idToken, {
       expiresIn: SESSION_EXPIRES_IN_MS,
     });
