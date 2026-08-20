@@ -77,21 +77,32 @@ async function assertCanManageLead(leadId: string) {
 }
 
 export async function updateLeadStatus(leadId: string, newStatus: LeadStatus): Promise<void> {
+  // Validate newStatus at runtime
+  if (!Object.keys(STATUS_LABELS).includes(newStatus)) {
+    throw new Error("invalid-status");
+  }
+
   const { session, firestore, data } = await assertCanManageLead(leadId);
 
   const leadRef = firestore.collection(COLLECTION).doc(leadId);
-  await leadRef.update({
+  const batch = firestore.batch();
+
+  // Update lead status
+  batch.update(leadRef, {
     status: newStatus,
     updatedAt: FieldValue.serverTimestamp(),
   });
 
-  await leadRef.collection("activities").add({
+  // Create activity record atomically
+  const activityRef = leadRef.collection("activities").doc();
+  batch.set(activityRef, {
     type: "status_change" as ActivityType,
     note: `${STATUS_LABELS[data.status as LeadStatus]} → ${STATUS_LABELS[newStatus]}`,
     createdAt: FieldValue.serverTimestamp(),
     createdBy: session.uid,
   });
 
+  await batch.commit();
   revalidatePath("/dashboard/pipeline");
 }
 
@@ -100,6 +111,12 @@ export async function addActivity(
   type: ActivityType,
   note: string,
 ): Promise<void> {
+  // Validate type at runtime (status_change is system-only)
+  const validTypes: ActivityType[] = ["call", "whatsapp", "email", "note"];
+  if (!validTypes.includes(type)) {
+    throw new Error("invalid-activity-type");
+  }
+
   const { session, firestore } = await assertCanManageLead(leadId);
 
   await firestore
@@ -131,6 +148,6 @@ export async function reassignLead(leadId: string, newAssigneeUid: string): Prom
 }
 
 export async function fetchLeadActivities(leadId: string): Promise<Activity[]> {
-  await requireRole(["admin", "sales"]);
+  await assertCanManageLead(leadId);
   return getActivities(leadId);
 }
