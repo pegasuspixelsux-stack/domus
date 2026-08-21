@@ -109,6 +109,13 @@ export function LeadDetailModal({
           </button>
         </div>
 
+        {lead.notes && (
+          <div className="flex flex-col gap-2 border border-foreground/10 bg-muted-background/40 p-4">
+            <span className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Notas</span>
+            <p className="text-sm leading-relaxed whitespace-pre-line">{lead.notes}</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Estado</label>

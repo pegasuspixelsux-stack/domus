@@ -9,6 +9,7 @@ import { getProperty } from "@/lib/properties/data";
 import { getTeamMembers } from "@/lib/team/data";
 import { ACTIVITY_TYPES, STATUS_LABELS } from "./constants";
 import { getActivities } from "./data";
+import { validatePrequalifyInput } from "./prequalify-validation";
 import { validateLeadInput } from "./validation";
 import type { Activity, ActivityType, LeadStatus } from "./types";
 
@@ -127,6 +128,133 @@ export async function createPropertyInquiry(
       propertyId: property.id,
       status: "new",
       assignedTo: salesperson.uid,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+  revalidatePath("/dashboard/pipeline");
+  return { success: true };
+}
+
+export interface PrequalifyActionState {
+  errors?: Record<string, string>;
+  success?: boolean;
+  values?: {
+    name: string;
+    email: string;
+    phone: string;
+    budget: string;
+    goal: string;
+    zone: string;
+    urgency: string;
+    financing: string;
+    obstacle: string;
+    notes: string;
+  };
+}
+
+const PREQUALIFY_LABELS: Record<string, string> = {
+  budget: "Presupuesto",
+  goal: "Objetivo",
+  zone: "Zona",
+  urgency: "Urgencia",
+  financing: "Financiamiento",
+  obstacle: "Obstáculo",
+};
+
+function composePrequalifyNotes(data: {
+  budget: string;
+  goal: string;
+  zone: string;
+  urgency: string;
+  financing: string;
+  obstacle: string;
+  notes: string;
+}): string {
+  const lines = (["budget", "goal", "zone", "urgency", "financing", "obstacle"] as const).map(
+    (key) => `${PREQUALIFY_LABELS[key]}: ${data[key]}`,
+  );
+  if (data.notes) {
+    lines.push("", `Notas adicionales: ${data.notes}`);
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Picks the active salesperson with the fewest total leads currently
+ * assigned. A single equality-filter count query per candidate keeps this
+ * index-free — no composite index needs deploying for a status filter on
+ * top of it, which matters here since nothing in this repo manages Firestore
+ * indexes for the admin to deploy.
+ */
+async function pickRoundRobinAssignee(): Promise<{ uid: string } | null> {
+  const salespeople = (await getTeamMembers()).filter((member) => member.role === "sales");
+  if (salespeople.length === 0) return null;
+
+  const firestore = getFirebaseAdminFirestore();
+  const counted = await Promise.all(
+    salespeople.map(async (person) => {
+      const snapshot = await firestore
+        .collection(COLLECTION)
+        .where("assignedTo", "==", person.uid)
+        .count()
+        .get();
+      return { uid: person.uid, count: snapshot.data().count };
+    }),
+  );
+
+  return counted.reduce((fewest, candidate) => (candidate.count < fewest.count ? candidate : fewest));
+}
+
+/**
+ * Public counterpart to `createLead` for the /precalificacion wizard — no
+ * auth required, and no salesperson picker in the form (unlike
+ * `createPropertyInquiry`), so the lead is round-robin assigned instead.
+ * The six qualification answers aren't stored as their own fields; they're
+ * composed into `notes` alongside anything the visitor typed themselves.
+ */
+export async function createPrequalifiedLead(
+  _prevState: PrequalifyActionState,
+  formData: FormData,
+): Promise<PrequalifyActionState> {
+  const raw = {
+    name: String(formData.get("name") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    phone: String(formData.get("phone") ?? ""),
+    budget: String(formData.get("budget") ?? ""),
+    goal: String(formData.get("goal") ?? ""),
+    zone: String(formData.get("zone") ?? ""),
+    urgency: String(formData.get("urgency") ?? ""),
+    financing: String(formData.get("financing") ?? ""),
+    obstacle: String(formData.get("obstacle") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
+  };
+
+  const result = validatePrequalifyInput(raw);
+  if (!result.valid) {
+    return { errors: result.errors, values: raw };
+  }
+
+  const assignee = await pickRoundRobinAssignee();
+  if (!assignee) {
+    return {
+      errors: { form: "No hay asesores disponibles en este momento. Escríbanos por WhatsApp." },
+      values: raw,
+    };
+  }
+
+  const { name, email, phone, ...qualification } = result.data;
+
+  await getFirebaseAdminFirestore()
+    .collection(COLLECTION)
+    .add({
+      name,
+      email,
+      phone,
+      source: "Formulario de Precalificación",
+      notes: composePrequalifyNotes(qualification),
+      status: "new",
+      assignedTo: assignee.uid,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });

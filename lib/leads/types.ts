@@ -16,6 +16,8 @@ export interface Lead {
   status: LeadStatus;
   assignedTo: string;
   propertyId?: string;
+  /** Free text — e.g. the composed answers from the /precalificacion wizard. */
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
