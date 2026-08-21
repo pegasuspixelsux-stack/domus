@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import { AgentChat } from "@/components/sections/agent-chat";
 import { GridLines } from "@/components/ui/grid-lines";
 import "./globals.css";
 
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div aria-hidden className="paper-noise" />
         <GridLines />
         {children}
+        <AgentChat />
       </body>
     </html>
   );
