@@ -21,6 +21,12 @@ export function NosotrosHero() {
       {/* Scrim for text legibility — deepens toward the bottom-left content. */}
       <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/40 to-foreground/5" />
 
+      {/* Extra depth directly behind the text block, on top of the base scrim. */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_0%_100%,var(--color-foreground)_0%,transparent_55%)] opacity-70" />
+
+      {/* Subtle band behind the fixed nav so it stays legible before scroll. */}
+      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-r from-foreground/40 to-transparent" />
+
       <Reveal className="relative mx-auto flex w-full max-w-[1600px] flex-col gap-6">
         <SectionLabel invert>Domus Punta del Este</SectionLabel>
         <h1 className="max-w-2xl font-serif text-4xl leading-[1] tracking-tight text-background md:text-5xl lg:text-6xl">
