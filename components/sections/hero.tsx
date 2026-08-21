@@ -15,22 +15,22 @@ export function Hero() {
         className="object-cover object-center transition-transform duration-[2000ms] ease-out group-hover:scale-105"
       />
       {/* Localized scrim behind the text block only — the rest of the photo stays plain. */}
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-foreground/80 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background/90 to-transparent" />
 
-      <span className="pointer-events-none absolute top-24 right-8 hidden text-[10px] tracking-[0.3em] text-background/60 uppercase [writing-mode:vertical-rl] md:right-16 lg:block">
+      <span className="pointer-events-none absolute top-24 right-8 hidden text-[10px] tracking-[0.3em] text-foreground/60 uppercase [writing-mode:vertical-rl] md:right-16 lg:block">
         Domus — Punta del Este
       </span>
 
       <Reveal className="relative mx-auto flex w-full max-w-[1600px] flex-col gap-10 lg:pl-[8.33%]">
-        <SectionLabel invert>Ocio e Inversión en Punta del Este</SectionLabel>
+        <SectionLabel>Ocio e Inversión en Punta del Este</SectionLabel>
 
-        <h1 className="max-w-2xl font-serif text-5xl leading-[0.95] tracking-tight text-background sm:text-6xl md:text-7xl lg:text-[5.5rem] lg:leading-[0.9]">
+        <h1 className="max-w-2xl font-serif text-5xl leading-[0.95] tracking-tight text-foreground sm:text-6xl md:text-7xl lg:text-[5.5rem] lg:leading-[0.9]">
           Frente al mar,
           <br />
           pensado como <em className="text-accent italic">inversión</em>.
         </h1>
 
-        <p className="max-w-md text-lg leading-relaxed text-background/75">
+        <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
           Domus selecciona las propiedades más exclusivas de Punta del Este
           para quienes buscan calidad de vida y retorno seguro — desde
           residencias frente al mar hasta desarrollos en pozo con
@@ -41,7 +41,7 @@ export function Hero() {
           <Button variant="primary" href="#propiedades">
             Ver Propiedades
           </Button>
-          <Button variant="secondary" invert href="#contacto">
+          <Button variant="secondary" href="#contacto">
             Agendar una Visita
           </Button>
         </div>
