@@ -11,9 +11,12 @@ import type { Property } from "@/lib/properties/types";
 export function PropertyCard({
   property,
   showPrice = false,
+  grayscale = true,
 }: {
   property: Property;
   showPrice?: boolean;
+  /** The signature grayscale → color hover reveal. Off for the homepage showcase. */
+  grayscale?: boolean;
 }) {
   return (
     <Link href={`/propiedades/${property.id}`} className="group flex flex-col gap-4">
@@ -23,7 +26,9 @@ export function PropertyCard({
           <img
             src={property.images[0]}
             alt={property.title}
-            className="absolute inset-0 h-full w-full origin-center scale-100 object-cover grayscale transition-[transform,filter] duration-[1800ms] ease-out group-hover:scale-105 group-hover:grayscale-0"
+            className={`absolute inset-0 h-full w-full origin-center scale-100 object-cover transition-[transform,filter] duration-[1800ms] ease-out group-hover:scale-105 ${
+              grayscale ? "grayscale group-hover:grayscale-0" : ""
+            }`}
           />
         </div>
       ) : (

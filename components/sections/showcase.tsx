@@ -31,7 +31,7 @@ export async function Showcase() {
           <RevealGroup className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
             {properties.map((property) => (
               <RevealGroupItem key={property.id}>
-                <PropertyCard property={property} />
+                <PropertyCard property={property} grayscale={false} />
               </RevealGroupItem>
             ))}
           </RevealGroup>
