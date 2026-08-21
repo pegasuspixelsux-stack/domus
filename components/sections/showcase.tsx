@@ -18,7 +18,7 @@ export async function Showcase() {
               Residencias <em className="text-accent italic">seleccionadas</em>.
             </h2>
           </div>
-          <Button variant="link" href="#contacto">
+          <Button variant="link" href="/propiedades">
             Ver Todo el Portfolio
           </Button>
         </Reveal>
