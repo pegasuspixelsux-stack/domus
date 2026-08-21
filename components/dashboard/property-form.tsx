@@ -93,7 +93,7 @@ export function PropertyForm({
   }
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-6">
+    <form action={formAction} className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <Field
         label="Título"
         name="title"
