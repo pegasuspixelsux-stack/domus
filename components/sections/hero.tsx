@@ -14,8 +14,8 @@ export function Hero() {
         sizes="100vw"
         className="object-cover object-center transition-transform duration-[2000ms] ease-out group-hover:scale-105"
       />
-      {/* Localized scrim behind the text block only — the rest of the photo stays plain. */}
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-foreground/70" />
+      {/* Full-height tint so it always matches the hero's own height. */}
+      <div className="absolute inset-0 bg-foreground/70" />
 
       <span className="pointer-events-none absolute top-24 right-8 hidden text-[10px] tracking-[0.3em] text-background/60 uppercase [writing-mode:vertical-rl] md:right-16 lg:block">
         Domus — Punta del Este
