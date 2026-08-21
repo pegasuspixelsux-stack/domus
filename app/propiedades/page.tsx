@@ -1,7 +1,7 @@
 import { CtaFooter } from "@/components/sections/cta-footer";
 import { Header } from "@/components/sections/header";
 import { PropertyListing } from "@/components/sections/property-listing";
-import { SectionLabel } from "@/components/ui/section-label";
+import { PropiedadesHero } from "@/components/sections/propiedades-hero";
 import { getProperties } from "@/lib/properties/data";
 
 export default async function PropiedadesPage() {
@@ -12,14 +12,7 @@ export default async function PropiedadesPage() {
     <div className="flex flex-1 flex-col">
       <Header />
       <main className="flex flex-1 flex-col">
-        <section className="border-b border-foreground/10 px-8 pt-36 pb-16 md:px-16 md:pt-44 md:pb-20">
-          <div className="mx-auto flex max-w-[1600px] flex-col gap-6">
-            <SectionLabel>Portfolio Completo</SectionLabel>
-            <h1 className="font-serif text-4xl leading-[1] tracking-tight md:text-5xl lg:text-6xl">
-              Cada residencia, <em className="text-accent italic">a su medida</em>.
-            </h1>
-          </div>
-        </section>
+        <PropiedadesHero />
 
         <PropertyListing properties={available} />
 
