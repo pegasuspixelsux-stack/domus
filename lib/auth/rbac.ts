@@ -22,13 +22,14 @@ export interface NavItem {
 }
 
 export const DASHBOARD_NAV_ITEMS: NavItem[] = [
+  { label: "Panel de Control", href: "/dashboard", roles: PROPERTY_MANAGER_ROLES },
   { label: "Propiedades", href: "/dashboard/properties", roles: PROPERTY_MANAGER_ROLES },
   { label: "Pipeline", href: "/dashboard/pipeline", roles: PIPELINE_ROLES },
   { label: "Usuarios", href: "/dashboard/users", roles: ["admin"] },
 ];
 
 export function getDefaultRouteForRole(role: Role): string {
-  return role === "sales" ? "/dashboard/pipeline" : "/dashboard/properties";
+  return role === "sales" ? "/dashboard/pipeline" : "/dashboard";
 }
 
 export function getNavItemsForRole(role: Role): NavItem[] {
