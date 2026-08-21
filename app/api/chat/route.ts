@@ -6,9 +6,14 @@ import { z } from "zod";
 import { getFirebaseAdminFirestore } from "@/lib/firebase/admin";
 import { pickRoundRobinAssignee } from "@/lib/leads/assignment";
 import {
+  BATHROOMS_OPTIONS,
+  BEDROOMS_OPTIONS,
   BUDGET_OPTIONS,
   composeChatQualificationNotes,
   computeQualificationScore,
+  FINANCING_OPTIONS,
+  GOAL_OPTIONS,
+  OBSTACLE_OPTIONS,
   URGENCY_OPTIONS,
   ZONE_OPTIONS,
 } from "@/lib/leads/prequalify-validation";
@@ -27,6 +32,11 @@ const LEADS_COLLECTION = "leads";
 const budgetEnum = BUDGET_OPTIONS as [string, ...string[]];
 const zoneEnum = ZONE_OPTIONS as [string, ...string[]];
 const urgencyEnum = URGENCY_OPTIONS as [string, ...string[]];
+const goalEnum = GOAL_OPTIONS as [string, ...string[]];
+const financingEnum = FINANCING_OPTIONS as [string, ...string[]];
+const obstacleEnum = OBSTACLE_OPTIONS as [string, ...string[]];
+const bedroomsEnum = BEDROOMS_OPTIONS as [string, ...string[]];
+const bathroomsEnum = BATHROOMS_OPTIONS as [string, ...string[]];
 
 function buildSystemPrompt(priorSearchCount: number): string {
   return `Eres el asistente virtual de Domus, una inmobiliaria de propiedades de ocio e inversión en Punta del Este, Uruguay.
@@ -47,9 +57,21 @@ Proponé proactivamente la precalificación — en una sola pregunta natural, no
 
 Ejemplo de cómo proponerlo: "Para conectarte con un asesor de forma óptima y mostrarte opciones exclusivas, ¿podrías indicarme brevemente tu presupuesto estimado, zona preferida y tus datos de contacto?"
 
+## Señales de calificación a relevar en la charla
+
+Nuestro formulario de precalificación (/precalificacion) releva ocho señales sobre cada visitante: presupuesto, objetivo (vivienda principal / segunda residencia / inversión), zona, dormitorios deseados, baños deseados, urgencia, financiación y principal obstáculo. Tu trabajo es sacar estas mismas señales, pero charlando — nunca mostrás una lista de preguntas ni un formulario.
+
+Priorizá naturalmente presupuesto, zona, dormitorios, urgencia y financiación — son las que más ayudan al asesor a preparar opciones concretas. Objetivo, baños y obstáculo son un plus: recogelos si surgen solos en la charla, pero no fuerces una pregunta extra solo para completarlos.
+
+Reglas para que se sienta como una conversación de alta gama, no un cuestionario:
+- Preguntá de a una señal por vez, entretejida en el ritmo natural del intercambio — nunca enumeres varias preguntas juntas ni las presentes como una lista.
+- Aprovechá lo que el visitante ya contó. Si dijo "busco algo para invertir en La Barra con 3 dormitorios", ya tenés objetivo, zona y dormitorios — no se los vuelvas a preguntar.
+- Si el visitante no quiere compartir algo, aceptalo con naturalidad y seguí adelante sin insistir.
+- Para cada señal, elegí la opción de la lista que mejor se ajuste a lo que dijo el visitante; si no dijo nada al respecto, dejá ese campo sin especificar — nunca inventes un valor.
+
 ## Registrar la consulta
 
-Cuando el visitante te dé sus datos de contacto (como mínimo nombre, correo y teléfono — presupuesto y zona son un plus si los menciona), usá la herramienta prequalifyLead para registrarlo. Para presupuesto y zona, elegí la opción de la lista que mejor se ajuste a lo que dijo; si no dijo nada al respecto, dejá ese campo sin especificar — nunca inventes un valor. No uses prequalifyLead sin haber recibido nombre, correo y teléfono explícitamente.
+Cuando el visitante te dé sus datos de contacto (como mínimo nombre, correo y teléfono), usá la herramienta prequalifyLead para registrarlo — con todas las señales de calificación que hayas recogido hasta ese punto de la charla. No uses prequalifyLead sin haber recibido nombre, correo y teléfono explícitamente.
 
 Después de un prequalifyLead exitoso, confirmale con calidez que un asesor se pondrá en contacto — por ejemplo: "¡Listo! Un asesor experto se pondrá en contacto contigo a la brevedad con las mejores opciones."`;
 }
@@ -113,23 +135,43 @@ export async function POST(req: Request) {
 
       prequalifyLead: tool({
         description:
-          "Pre-califica y registra al visitante como un lead estructurado en el CRM para que un asesor de Domus lo contacte. Requiere nombre, correo electrónico y teléfono ya confirmados por el visitante en la conversación; presupuesto y zona son opcionales pero mejoran la calificación del lead.",
+          "Pre-califica y registra al visitante como un lead estructurado en el CRM para que un asesor de Domus lo contacte, con las mismas ocho señales que releva el formulario de precalificación. Requiere nombre, correo electrónico y teléfono ya confirmados por el visitante en la conversación; el resto de los campos son opcionales y mejoran la calificación del lead.",
         inputSchema: z.object({
           name: z.string().describe("Nombre completo del visitante"),
           email: z.string().describe("Correo electrónico del visitante"),
           phone: z.string().describe("Teléfono de contacto del visitante"),
           budget: z.enum(budgetEnum).optional().describe("Presupuesto estimado, solo si el visitante lo mencionó"),
+          goal: z
+            .enum(goalEnum)
+            .optional()
+            .describe("Objetivo de la búsqueda (vivienda principal, segunda residencia, inversión), solo si el visitante lo mencionó"),
           zone: z.enum(zoneEnum).optional().describe("Zona preferida, solo si el visitante la mencionó"),
-          timeline: z
+          bedrooms: z
+            .enum(bedroomsEnum)
+            .optional()
+            .describe("Cantidad de dormitorios deseados, solo si el visitante la mencionó"),
+          bathrooms: z
+            .enum(bathroomsEnum)
+            .optional()
+            .describe("Cantidad de baños deseados, solo si el visitante la mencionó"),
+          urgency: z
             .enum(urgencyEnum)
             .optional()
             .describe("Plazo o urgencia de la búsqueda, solo si el visitante lo mencionó"),
+          financing: z
+            .enum(financingEnum)
+            .optional()
+            .describe("Forma de financiación, solo si el visitante la mencionó"),
+          obstacle: z
+            .enum(obstacleEnum)
+            .optional()
+            .describe("Principal obstáculo que menciona el visitante, solo si lo mencionó"),
           notes: z
             .string()
             .optional()
             .describe("Resumen breve de lo que busca o la propiedad de interés, para el asesor"),
         }),
-        execute: async ({ name, email, phone, budget, zone, timeline, notes }) => {
+        execute: async ({ name, email, phone, budget, goal, zone, bedrooms, bathrooms, urgency, financing, obstacle, notes }) => {
           const validated = validateLeadInput({ name, email, phone, source: "Chat IA" });
           if (!validated.valid) {
             return { success: false as const, error: Object.values(validated.errors).join(" ") };
@@ -143,7 +185,16 @@ export async function POST(req: Request) {
             };
           }
 
-          const qualificationScore = computeQualificationScore({ budget, zone, timeline });
+          const qualificationScore = computeQualificationScore({
+            budget,
+            goal,
+            zone,
+            bedrooms,
+            bathrooms,
+            urgency,
+            financing,
+            obstacle,
+          });
 
           await getFirebaseAdminFirestore()
             .collection(LEADS_COLLECTION)
@@ -153,7 +204,17 @@ export async function POST(req: Request) {
               // project doesn't set ignoreUndefinedProperties) — an empty string is
               // the "no notes" case instead; toLead()/the UI both already treat a
               // falsy notes value as "nothing to show".
-              notes: composeChatQualificationNotes({ budget, zone, timeline, notes }),
+              notes: composeChatQualificationNotes({
+                budget,
+                goal,
+                zone,
+                bedrooms,
+                bathrooms,
+                urgency,
+                financing,
+                obstacle,
+                notes,
+              }),
               qualificationScore,
               status: "new",
               assignedTo: assignee.uid,

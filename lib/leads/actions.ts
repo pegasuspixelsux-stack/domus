@@ -147,6 +147,8 @@ export interface PrequalifyActionState {
     budget: string;
     goal: string;
     zone: string;
+    bedrooms: string;
+    bathrooms: string;
     urgency: string;
     financing: string;
     obstacle: string;
@@ -172,6 +174,8 @@ export async function createPrequalifiedLead(
     budget: String(formData.get("budget") ?? ""),
     goal: String(formData.get("goal") ?? ""),
     zone: String(formData.get("zone") ?? ""),
+    bedrooms: String(formData.get("bedrooms") ?? ""),
+    bathrooms: String(formData.get("bathrooms") ?? ""),
     urgency: String(formData.get("urgency") ?? ""),
     financing: String(formData.get("financing") ?? ""),
     obstacle: String(formData.get("obstacle") ?? ""),

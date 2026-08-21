@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { createPrequalifiedLead } from "@/lib/leads/actions";
 import type { PrequalifyActionState } from "@/lib/leads/actions";
 import {
+  BATHROOMS_OPTIONS,
+  BEDROOMS_OPTIONS,
   BUDGET_OPTIONS,
   FINANCING_OPTIONS,
   GOAL_OPTIONS,
@@ -16,7 +18,7 @@ import {
 const initialState: PrequalifyActionState = {};
 
 const STEPS = [
-  { number: 1, label: "Perfil Inicial", fields: ["budget", "zone", "goal"] },
+  { number: 1, label: "Perfil Inicial", fields: ["budget", "zone", "bedrooms", "bathrooms", "goal"] },
   { number: 2, label: "Intención y Financiamiento", fields: ["urgency", "financing", "obstacle"] },
   { number: 3, label: "Contacto", fields: ["name", "email", "phone"] },
 ] as const;
@@ -42,6 +44,8 @@ export function PrequalificationWizard() {
 
   const [budget, setBudget] = useState(() => state.values?.budget ?? "");
   const [zone, setZone] = useState(() => state.values?.zone ?? "");
+  const [bedrooms, setBedrooms] = useState(() => state.values?.bedrooms ?? "");
+  const [bathrooms, setBathrooms] = useState(() => state.values?.bathrooms ?? "");
   const [goal, setGoal] = useState(() => state.values?.goal ?? "");
   const [urgency, setUrgency] = useState(() => state.values?.urgency ?? "");
   const [financing, setFinancing] = useState(() => state.values?.financing ?? "");
@@ -90,6 +94,8 @@ export function PrequalificationWizard() {
         <div className={step === 1 ? "flex flex-col gap-6" : "hidden"}>
           <Select label="Presupuesto" name="budget" options={BUDGET_OPTIONS} error={state.errors?.budget} value={budget} onChange={setBudget} />
           <Select label="Zona de interés" name="zone" options={ZONE_OPTIONS} error={state.errors?.zone} value={zone} onChange={setZone} />
+          <Select label="Dormitorios" name="bedrooms" options={BEDROOMS_OPTIONS} error={state.errors?.bedrooms} value={bedrooms} onChange={setBedrooms} />
+          <Select label="Baños" name="bathrooms" options={BATHROOMS_OPTIONS} error={state.errors?.bathrooms} value={bathrooms} onChange={setBathrooms} />
           <Select label="Objetivo" name="goal" options={GOAL_OPTIONS} error={state.errors?.goal} value={goal} onChange={setGoal} />
         </div>
 

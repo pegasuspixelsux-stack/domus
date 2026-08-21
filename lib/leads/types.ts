@@ -18,7 +18,7 @@ export interface Lead {
   propertyId?: string;
   /** Free text — e.g. the composed answers from the /precalificacion wizard. */
   notes?: string;
-  /** 0–3, chat-sourced leads only. See computeQualificationScore. */
+  /** 0–CHAT_QUALIFICATION_MAX, chat-sourced leads only. See computeQualificationScore. */
   qualificationScore?: number;
   createdAt: string;
   updatedAt: string;

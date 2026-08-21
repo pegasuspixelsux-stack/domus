@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LEAD_MANAGER_ROLES, type Role } from "@/lib/auth/rbac";
 import { addActivity, fetchLeadActivities, reassignLead, updateLeadStatus } from "@/lib/leads/actions";
 import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, LEAD_STATUSES } from "@/lib/leads/constants";
+import { CHAT_QUALIFICATION_MAX } from "@/lib/leads/prequalify-validation";
 import type { Activity, ActivityType, Lead, LeadStatus } from "@/lib/leads/types";
 import type { TeamMember } from "@/lib/team/data";
 
@@ -100,9 +101,9 @@ export function LeadDetailModal({
               {lead.qualificationScore !== undefined && (
                 <span
                   className="border border-accent px-2 py-0.5 text-xs tracking-[0.1em] text-accent uppercase"
-                  title="Cantidad de señales de calificación (presupuesto, zona, plazo) que aportó el visitante en el chat"
+                  title="Cantidad de señales de calificación (presupuesto, objetivo, zona, dormitorios, baños, urgencia, financiación, obstáculo) que aportó el visitante en el chat"
                 >
-                  Calificación {lead.qualificationScore}/3
+                  Calificación {lead.qualificationScore}/{CHAT_QUALIFICATION_MAX}
                 </span>
               )}
             </div>

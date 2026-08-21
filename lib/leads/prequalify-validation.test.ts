@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  BATHROOMS_OPTIONS,
+  BEDROOMS_OPTIONS,
   BUDGET_OPTIONS,
   FINANCING_OPTIONS,
   GOAL_OPTIONS,
@@ -17,6 +19,8 @@ function validInput() {
     budget: BUDGET_OPTIONS[0],
     goal: GOAL_OPTIONS[0],
     zone: ZONE_OPTIONS[0],
+    bedrooms: BEDROOMS_OPTIONS[0],
+    bathrooms: BATHROOMS_OPTIONS[0],
     urgency: URGENCY_OPTIONS[0],
     financing: FINANCING_OPTIONS[0],
     obstacle: OBSTACLE_OPTIONS[0],
@@ -37,6 +41,8 @@ describe("validatePrequalifyInput", () => {
       budget: "Prefiero no divulgar",
       goal: "Prefiero no divulgar",
       zone: "Prefiero no divulgar",
+      bedrooms: "Prefiero no divulgar",
+      bathrooms: "Prefiero no divulgar",
       urgency: "Prefiero no divulgar",
       financing: "Prefiero no divulgar",
       obstacle: "Prefiero no divulgar",
@@ -68,11 +74,13 @@ describe("validatePrequalifyInput", () => {
     if (!result.valid) expect(result.errors.budget).toBeDefined();
   });
 
-  it("rejects a missing goal/zone/urgency/financing/obstacle", () => {
+  it("rejects a missing goal/zone/bedrooms/bathrooms/urgency/financing/obstacle", () => {
     const result = validatePrequalifyInput({
       ...validInput(),
       goal: "",
       zone: "",
+      bedrooms: "",
+      bathrooms: "",
       urgency: "",
       financing: "",
       obstacle: "",
@@ -81,6 +89,8 @@ describe("validatePrequalifyInput", () => {
     if (!result.valid) {
       expect(result.errors.goal).toBeDefined();
       expect(result.errors.zone).toBeDefined();
+      expect(result.errors.bedrooms).toBeDefined();
+      expect(result.errors.bathrooms).toBeDefined();
       expect(result.errors.urgency).toBeDefined();
       expect(result.errors.financing).toBeDefined();
       expect(result.errors.obstacle).toBeDefined();
