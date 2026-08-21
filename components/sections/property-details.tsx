@@ -22,7 +22,7 @@ export function PropertyDetails({ property }: { property: Property }) {
         <Reveal className="grid grid-cols-2 gap-8 sm:grid-cols-3">
           {stats.map((stat) => (
             <div key={stat.label} className="flex flex-col gap-2 border-t-4 border-t-accent pt-6">
-              <span className="font-serif text-2xl whitespace-nowrap md:text-3xl">{stat.value}</span>
+              <span className="font-serif text-3xl whitespace-nowrap md:text-4xl">{stat.value}</span>
               <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 {stat.label}
               </span>
