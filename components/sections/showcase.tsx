@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
 import { Reveal } from "@/components/ui/reveal";
@@ -30,26 +31,28 @@ export async function Showcase() {
         ) : (
           <RevealGroup className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
             {properties.map((property) => (
-              <RevealGroupItem key={property.id} className="group flex flex-col gap-4">
-                {property.images[0] ? (
-                  <div className="relative aspect-[4/5] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition-shadow duration-500 group-hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- property photo URLs are arbitrary admin-entered hosts, not in next.config.ts's image allowlist */}
-                    <img
-                      src={property.images[0]}
-                      alt={property.title}
-                      className="absolute inset-0 h-full w-full origin-center scale-100 object-cover grayscale transition-[transform,filter] duration-[1800ms] ease-out group-hover:scale-105 group-hover:grayscale-0"
-                    />
+              <RevealGroupItem key={property.id}>
+                <Link href={`/propiedades/${property.id}`} className="group flex flex-col gap-4">
+                  {property.images[0] ? (
+                    <div className="relative aspect-[4/5] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition-shadow duration-500 group-hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- property photo URLs are arbitrary admin-entered hosts, not in next.config.ts's image allowlist */}
+                      <img
+                        src={property.images[0]}
+                        alt={property.title}
+                        className="absolute inset-0 h-full w-full origin-center scale-100 object-cover grayscale transition-[transform,filter] duration-[1800ms] ease-out group-hover:scale-105 group-hover:grayscale-0"
+                      />
+                    </div>
+                  ) : (
+                    <PlaceholderImage aspect="aspect-[4/5]" tone="blog" />
+                  )}
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h3 className="font-serif text-xl">{property.title}</h3>
+                    <span className="shrink-0 text-xs tracking-[0.2em] text-muted-foreground uppercase">
+                      {property.tag}
+                    </span>
                   </div>
-                ) : (
-                  <PlaceholderImage aspect="aspect-[4/5]" tone="blog" />
-                )}
-                <div className="flex items-baseline justify-between gap-4">
-                  <h3 className="font-serif text-xl">{property.title}</h3>
-                  <span className="shrink-0 text-xs tracking-[0.2em] text-muted-foreground uppercase">
-                    {property.tag}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">{property.location}</p>
+                  <p className="text-sm text-muted-foreground">{property.location}</p>
+                </Link>
               </RevealGroupItem>
             ))}
           </RevealGroup>
