@@ -13,6 +13,55 @@ const STATUS_OPTIONS: { value: PropertyStatus; label: string }[] = [
   { value: "sold", label: "Vendida" },
 ];
 
+const MAX_DIMENSION = 2000;
+const JPEG_QUALITY = 0.85;
+
+/**
+ * Phone camera photos routinely come out well over MAX_IMAGE_BYTES (5MB) —
+ * a modern phone's default camera output is often 8–15MB. Without this,
+ * "take a photo" would fail the size check almost every time. Downscales to
+ * MAX_DIMENSION on the long edge and re-encodes as JPEG; a file already
+ * within both bounds (e.g. a pre-sized photo from a gallery) is returned
+ * untouched. Animated GIFs are skipped — re-encoding would flatten them to
+ * one frame. Falls back to the original file on any failure (e.g.
+ * createImageBitmap unsupported) rather than blocking the upload.
+ */
+async function resizeImageIfNeeded(file: File): Promise<File> {
+  if (file.type === "image/gif") return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && file.size <= MAX_IMAGE_BYTES) {
+      bitmap.close();
+      return file;
+    }
+
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY),
+    );
+    if (!blob) return file;
+
+    const newName = `${file.name.replace(/\.[^./\\]+$/, "")}.jpg`;
+    return new File([blob], newName, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
 type PropertyFormAction = (
   prevState: PropertyActionState,
   formData: FormData,
@@ -63,18 +112,21 @@ export function PropertyForm({
       return;
     }
 
-    const toUpload = selected.slice(0, remainingSlots);
-    const oversized = toUpload.filter((file) => file.size > MAX_IMAGE_BYTES);
-    if (oversized.length > 0) {
-      setUploadError(`${oversized.map((f) => f.name).join(", ")}: supera los 5MB.`);
-    }
-    const withinLimit = toUpload.filter((file) => file.size <= MAX_IMAGE_BYTES);
-    if (withinLimit.length === 0) return;
-
-    const formData = new FormData();
-    withinLimit.forEach((file) => formData.append("files", file));
+    const toProcess = selected.slice(0, remainingSlots);
 
     startUpload(async () => {
+      const resized = await Promise.all(toProcess.map((file) => resizeImageIfNeeded(file)));
+
+      const oversized = resized.filter((file) => file.size > MAX_IMAGE_BYTES);
+      if (oversized.length > 0) {
+        setUploadError(`${oversized.map((f) => f.name).join(", ")}: supera los 5MB incluso tras reducir el tamaño.`);
+      }
+      const withinLimit = resized.filter((file) => file.size <= MAX_IMAGE_BYTES);
+      if (withinLimit.length === 0) return;
+
+      const formData = new FormData();
+      withinLimit.forEach((file) => formData.append("files", file));
+
       try {
         const result = await uploadPropertyImages(formData);
         if (result.urls.length > 0) {
@@ -84,10 +136,12 @@ export function PropertyForm({
           ]);
         }
         if (result.errors.length > 0) {
-          setUploadError(result.errors.join(" "));
+          setUploadError((current) => [current, result.errors.join(" ")].filter(Boolean).join(" "));
         }
       } catch {
-        setUploadError("No se pudieron subir las imágenes. Intente de nuevo.");
+        setUploadError((current) =>
+          [current, "No se pudieron subir las imágenes. Intente de nuevo."].filter(Boolean).join(" "),
+        );
       }
     });
   }
@@ -257,7 +311,7 @@ export function PropertyForm({
                 <button
                   type="button"
                   onClick={() => removeImageRow(image.id)}
-                  className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center bg-foreground/70 text-xs text-background opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center bg-foreground/70 text-sm text-background opacity-100 transition-opacity duration-300 sm:h-6 sm:w-6 sm:text-xs sm:opacity-0 sm:group-hover:opacity-100"
                   aria-label="Quitar imagen"
                 >
                   ×
@@ -268,17 +322,34 @@ export function PropertyForm({
         )}
 
         {images.length < MAX_IMAGES_PER_PROPERTY && (
-          <label className="flex h-12 w-full max-w-xs cursor-pointer items-center justify-center border border-foreground/40 text-xs tracking-[0.2em] text-foreground uppercase transition-colors duration-500 hover:bg-foreground hover:text-background">
-            {uploading ? "Subiendo…" : "Subir Imágenes"}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              multiple
-              className="hidden"
-              onChange={handleFilesSelected}
-              disabled={uploading}
-            />
-          </label>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label className="flex h-12 w-full cursor-pointer items-center justify-center border border-foreground/40 text-xs tracking-[0.2em] text-foreground uppercase transition-colors duration-500 hover:bg-foreground hover:text-background sm:max-w-xs">
+              {uploading ? "Subiendo…" : "Subir Imágenes"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                className="hidden"
+                onChange={handleFilesSelected}
+                disabled={uploading}
+              />
+            </label>
+
+            {/* capture="environment" opens the rear camera directly on mobile
+                instead of just the gallery picker — ignored on desktop, where
+                it behaves like a normal file input. */}
+            <label className="flex h-12 w-full cursor-pointer items-center justify-center border border-foreground/40 text-xs tracking-[0.2em] text-foreground uppercase transition-colors duration-500 hover:bg-foreground hover:text-background sm:max-w-xs">
+              {uploading ? "Subiendo…" : "Tomar Foto"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="environment"
+                className="hidden"
+                onChange={handleFilesSelected}
+                disabled={uploading}
+              />
+            </label>
+          </div>
         )}
 
         <p className="text-xs text-muted-foreground">Máximo 5MB por imagen, hasta {MAX_IMAGES_PER_PROPERTY} imágenes.</p>
