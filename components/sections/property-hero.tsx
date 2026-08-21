@@ -35,7 +35,7 @@ export function PropertyHero({ property }: { property: Property }) {
   }
 
   return (
-    <section className="relative flex min-h-screen items-end overflow-hidden border-b border-foreground/10 px-8 pt-32 pb-20 md:px-16 md:pb-28">
+    <section className="relative flex min-h-[95vh] items-end overflow-hidden border-b border-foreground/10 px-8 pt-32 pb-20 md:min-h-screen md:px-16 md:pb-28">
       {images.length > 0 ? (
         <AnimatePresence>
           <motion.img
