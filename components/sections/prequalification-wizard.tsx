@@ -23,16 +23,29 @@ const STEPS = [
 
 /**
  * Three-step lead qualification wizard. All fields live in one <form> for
- * the whole wizard — each step is just CSS-hidden rather than unmounted, so
- * uncontrolled inputs keep their values as the visitor moves between steps
- * without needing any controlled state for the fields themselves (matching
- * every other form in this app). "Atrás"/"Siguiente" are plain buttons;
- * only the last step submits. On a failed submission, jumps back to the
- * earliest step that has an error.
+ * the whole wizard — each step is just CSS-hidden rather than unmounted.
+ * Text inputs stay uncontrolled (defaultValue, matching every other form in
+ * this app) since they keep their DOM value across re-renders fine. The six
+ * <select> fields must be controlled, though: React re-applies a select's
+ * `defaultValue` on every re-render (unlike an input's, which is mount-only)
+ * — since setStep() re-renders the tree on every step change and
+ * `state.values` stays undefined until the first server round trip,
+ * `defaultValue={state.values?.budget}` would silently reset a user's
+ * earlier selection back to the placeholder the moment they moved to the
+ * next step. "Atrás"/"Siguiente" are plain buttons; only the last step
+ * submits. On a failed submission, jumps back to the earliest step that has
+ * an error.
  */
 export function PrequalificationWizard() {
   const [state, formAction, pending] = useActionState(createPrequalifiedLead, initialState);
   const [step, setStep] = useState(1);
+
+  const [budget, setBudget] = useState(() => state.values?.budget ?? "");
+  const [zone, setZone] = useState(() => state.values?.zone ?? "");
+  const [goal, setGoal] = useState(() => state.values?.goal ?? "");
+  const [urgency, setUrgency] = useState(() => state.values?.urgency ?? "");
+  const [financing, setFinancing] = useState(() => state.values?.financing ?? "");
+  const [obstacle, setObstacle] = useState(() => state.values?.obstacle ?? "");
 
   useEffect(() => {
     if (!state.errors) return;
@@ -75,15 +88,15 @@ export function PrequalificationWizard() {
 
       <form action={formAction} className="flex flex-col gap-8">
         <div className={step === 1 ? "flex flex-col gap-6" : "hidden"}>
-          <Select label="Presupuesto" name="budget" options={BUDGET_OPTIONS} error={state.errors?.budget} defaultValue={state.values?.budget} />
-          <Select label="Zona de interés" name="zone" options={ZONE_OPTIONS} error={state.errors?.zone} defaultValue={state.values?.zone} />
-          <Select label="Objetivo" name="goal" options={GOAL_OPTIONS} error={state.errors?.goal} defaultValue={state.values?.goal} />
+          <Select label="Presupuesto" name="budget" options={BUDGET_OPTIONS} error={state.errors?.budget} value={budget} onChange={setBudget} />
+          <Select label="Zona de interés" name="zone" options={ZONE_OPTIONS} error={state.errors?.zone} value={zone} onChange={setZone} />
+          <Select label="Objetivo" name="goal" options={GOAL_OPTIONS} error={state.errors?.goal} value={goal} onChange={setGoal} />
         </div>
 
         <div className={step === 2 ? "flex flex-col gap-6" : "hidden"}>
-          <Select label="Urgencia" name="urgency" options={URGENCY_OPTIONS} error={state.errors?.urgency} defaultValue={state.values?.urgency} />
-          <Select label="Financiamiento" name="financing" options={FINANCING_OPTIONS} error={state.errors?.financing} defaultValue={state.values?.financing} />
-          <Select label="Principal obstáculo" name="obstacle" options={OBSTACLE_OPTIONS} error={state.errors?.obstacle} defaultValue={state.values?.obstacle} />
+          <Select label="Urgencia" name="urgency" options={URGENCY_OPTIONS} error={state.errors?.urgency} value={urgency} onChange={setUrgency} />
+          <Select label="Financiamiento" name="financing" options={FINANCING_OPTIONS} error={state.errors?.financing} value={financing} onChange={setFinancing} />
+          <Select label="Principal obstáculo" name="obstacle" options={OBSTACLE_OPTIONS} error={state.errors?.obstacle} value={obstacle} onChange={setObstacle} />
         </div>
 
         <div className={step === 3 ? "flex flex-col gap-6" : "hidden"}>
@@ -178,13 +191,15 @@ function Select({
   name,
   options,
   error,
-  defaultValue,
+  value,
+  onChange,
 }: {
   label: string;
   name: string;
   options: readonly string[];
   error?: string;
-  defaultValue?: string;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -194,7 +209,8 @@ function Select({
       <select
         id={name}
         name={name}
-        defaultValue={defaultValue ?? ""}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
       >
         <option value="" disabled>
