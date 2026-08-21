@@ -46,7 +46,7 @@ export function Header() {
           <Link href="/propiedades" className="transition-colors duration-500 hover:text-accent">
             Propiedades
           </Link>
-          <Link href="#nosotros" className="transition-colors duration-500 hover:text-accent">
+          <Link href="/nosotros" className="transition-colors duration-500 hover:text-accent">
             Nosotros
           </Link>
           <Link href="#testimonios" className="transition-colors duration-500 hover:text-accent">
