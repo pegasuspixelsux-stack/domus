@@ -7,7 +7,7 @@ export function Hero() {
   return (
     <section className="group relative flex min-h-screen items-end overflow-hidden border-b border-foreground/10 px-8 pt-32 pb-20 md:px-16 md:pb-28">
       <Image
-        src="/images/coastal_brava.jfif"
+        src="/images/coastal_brava.jpg"
         alt="Costa de Punta del Este"
         fill
         priority
