@@ -7,11 +7,23 @@ import type { Property } from "@/lib/properties/types";
  * admin-entered feature list as chips, and the full description —
  * everything on the `Property` model that the hero doesn't already show.
  */
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+function daysOnMarket(createdAt: string): number {
+  return Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / MS_PER_DAY));
+}
+
 export function PropertyDetails({ property }: { property: Property }) {
+  const days = daysOnMarket(property.createdAt);
+
   const stats = [
     { label: "Dormitorios", value: String(property.bedrooms) },
     { label: "Baños", value: String(property.bathrooms) },
-    { label: "Precio", value: `${property.currency} ${property.price.toLocaleString("es-UY")}` },
+    {
+      label: "Precio",
+      value: `${property.currency} ${property.price.toLocaleString("es-UY")}`,
+      caption: `${days} ${days === 1 ? "día" : "días"} en el mercado`,
+    },
     { label: "Superficie", value: `${property.areaM2} m²` },
     { label: "Tipo", value: property.tag },
   ];
@@ -26,6 +38,9 @@ export function PropertyDetails({ property }: { property: Property }) {
               <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 {stat.label}
               </span>
+              {stat.caption && (
+                <span className="text-xs text-muted-foreground/70">{stat.caption}</span>
+              )}
             </div>
           ))}
         </Reveal>
