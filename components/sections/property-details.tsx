@@ -11,14 +11,15 @@ export function PropertyDetails({ property }: { property: Property }) {
   const stats = [
     { label: "Dormitorios", value: String(property.bedrooms) },
     { label: "Baños", value: String(property.bathrooms) },
+    { label: "Precio", value: `${property.currency} ${property.price.toLocaleString("es-UY")}` },
     { label: "Superficie", value: `${property.areaM2} m²` },
     { label: "Tipo", value: property.tag },
   ];
 
   return (
     <section className="border-b border-foreground/10 px-8 py-20 md:px-16 md:py-32">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-16">
-        <Reveal className="grid grid-cols-2 gap-8 md:grid-cols-4">
+      <div className="mx-auto flex max-w-[760px] flex-col gap-16">
+        <Reveal className="grid grid-cols-2 gap-8 sm:grid-cols-3">
           {stats.map((stat) => (
             <div key={stat.label} className="flex flex-col gap-2 border-t-4 border-t-accent pt-6">
               <span className="font-serif text-3xl md:text-4xl">{stat.value}</span>

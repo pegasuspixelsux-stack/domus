@@ -103,10 +103,6 @@ export function PropertyHero({ property }: { property: Property }) {
         <h1 className="max-w-2xl font-serif text-5xl leading-[0.95] tracking-tight text-background sm:text-6xl md:text-7xl">
           {property.title}
         </h1>
-
-        <p className="text-lg text-background/80">
-          {property.currency} {property.price.toLocaleString("es-UY")}
-        </p>
       </Reveal>
     </section>
   );

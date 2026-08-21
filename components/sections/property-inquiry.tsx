@@ -41,8 +41,8 @@ export function PropertyInquiry({
       id="consultar"
       className="border-b border-foreground/10 bg-foreground px-8 py-20 text-background md:px-16 md:py-32"
     >
-      <RevealGroup className="mx-auto flex max-w-[1600px] flex-col gap-16 lg:flex-row lg:items-start lg:justify-between">
-        <RevealGroupItem className="flex flex-col gap-6 lg:max-w-lg">
+      <RevealGroup className="mx-auto flex max-w-[760px] flex-col gap-16">
+        <RevealGroupItem className="flex flex-col gap-6">
           <SectionLabel invert>Consultar por esta Propiedad</SectionLabel>
           <h2 className="font-serif text-4xl leading-[0.95] tracking-tight md:text-5xl">
             ¿Le interesa <em className="text-accent italic">{property.title}</em>?
@@ -57,7 +57,7 @@ export function PropertyInquiry({
         </RevealGroupItem>
 
         {salespeople.length > 0 && (
-          <RevealGroupItem className="w-full lg:max-w-md">
+          <RevealGroupItem className="w-full">
             {state.success ? (
               <p className="text-lg text-background/90">
                 Gracias — un asesor se pondrá en contacto a la brevedad.
