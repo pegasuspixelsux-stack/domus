@@ -20,18 +20,18 @@ describe("getNavItemsForRole", () => {
     expect(getNavItemsForRole("admin")).toEqual(DASHBOARD_NAV_ITEMS);
   });
 
-  it("gives sales staff only the pipeline item", () => {
+  it("gives sales staff only pipeline and leads", () => {
     const items = getNavItemsForRole("sales");
-    expect(items).toHaveLength(1);
-    expect(items[0].href).toBe("/dashboard/pipeline");
+    expect(items.map((item) => item.href)).toEqual(["/dashboard/pipeline", "/dashboard/leads"]);
   });
 
-  it("gives managers the control panel, properties, and pipeline, but not users", () => {
+  it("gives managers the control panel, properties, pipeline, and leads, but not users", () => {
     const items = getNavItemsForRole("manager");
     expect(items.map((item) => item.href)).toEqual([
       "/dashboard",
       "/dashboard/properties",
       "/dashboard/pipeline",
+      "/dashboard/leads",
     ]);
   });
 });
