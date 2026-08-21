@@ -41,7 +41,7 @@ export function Hero() {
           <Button variant="primary" href="/propiedades">
             Ver Propiedades
           </Button>
-          <Button variant="secondary" invert href="#contacto">
+          <Button variant="secondary" invert href="/precalificacion">
             Agendar una Visita
           </Button>
         </div>

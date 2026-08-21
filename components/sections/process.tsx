@@ -46,7 +46,7 @@ export function Process() {
         </RevealGroup>
 
         <Reveal className="mt-16 lg:mt-20 lg:pl-[8.33%]" delay={0.15}>
-          <Button variant="primary" href="#contacto">
+          <Button variant="primary" href="/precalificacion">
             Comenzar Ahora
           </Button>
         </Reveal>

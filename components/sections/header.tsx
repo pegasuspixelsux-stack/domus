@@ -64,7 +64,7 @@ export function Header() {
 
         <Button
           variant="link"
-          href="#contacto"
+          href="/precalificacion"
           invert={!scrolled}
           className="hidden md:inline-flex"
         >
@@ -97,7 +97,7 @@ export function Header() {
 
           <Button
             variant="primary"
-            href="#contacto"
+            href="/precalificacion"
             onClick={() => setMenuOpen(false)}
             className="mt-4 w-full"
           >
