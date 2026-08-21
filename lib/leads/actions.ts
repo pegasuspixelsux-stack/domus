@@ -260,7 +260,7 @@ export async function createPrequalifiedLead(
     });
 
   revalidatePath("/dashboard/pipeline");
-  return { success: true };
+  return { success: true, values: raw };
 }
 
 async function assertCanManageLead(leadId: string) {
