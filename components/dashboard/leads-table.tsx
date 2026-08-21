@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { type KeyboardEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { type KeyboardEvent, useEffect, useState } from "react";
 import type { Role } from "@/lib/auth/rbac";
 import { STATUS_LABELS } from "@/lib/leads/constants";
 import type { Lead } from "@/lib/leads/types";
@@ -15,6 +15,9 @@ import { LeadDetailModal } from "./lead-detail-modal";
  * (full lead data, the Notas block — which carries the /precalificacion
  * wizard's composed answers when the lead came from there — and the
  * activity log), so nothing about a lead lives only in one view.
+ *
+ * A `?leadId=` query param auto-opens that lead's modal on load — this is
+ * the link the new-lead alert email points to (see lib/email/sendLeadAlert).
  */
 export function LeadsTable({
   leads,
@@ -26,9 +29,24 @@ export function LeadsTable({
   currentRole: Role;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const sorted = [...leads].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  useEffect(() => {
+    const leadId = searchParams.get("leadId");
+    if (!leadId) return;
+    const match = sorted.find((lead) => lead.id === leadId);
+    if (match) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedLead(match);
+    }
+    // Only re-run when the URL param itself changes — `sorted` is a fresh
+    // array every render (leads.sort() above), which would otherwise fire
+    // this on every render and fight the user closing the modal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function handleRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, lead: Lead) {
     if (event.key === "Enter" || event.key === " ") {

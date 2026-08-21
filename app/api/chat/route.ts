@@ -1,10 +1,9 @@
 import { google } from "@ai-sdk/google";
-import { FieldValue } from "firebase-admin/firestore";
 import { convertToModelMessages, stepCountIs, streamText, tool, type UIMessage } from "ai";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getFirebaseAdminFirestore } from "@/lib/firebase/admin";
 import { pickRoundRobinAssignee } from "@/lib/leads/assignment";
+import { createLeadRecord } from "@/lib/leads/create";
 import {
   BATHROOMS_OPTIONS,
   BEDROOMS_OPTIONS,
@@ -19,8 +18,6 @@ import {
 } from "@/lib/leads/prequalify-validation";
 import { validateLeadInput } from "@/lib/leads/validation";
 import { getProperties } from "@/lib/properties/data";
-
-const LEADS_COLLECTION = "leads";
 
 // z.enum needs a non-empty string tuple type; the option lists are declared
 // as plain string[] since they're also used with .includes() elsewhere
@@ -196,31 +193,22 @@ export async function POST(req: Request) {
             obstacle,
           });
 
-          await getFirebaseAdminFirestore()
-            .collection(LEADS_COLLECTION)
-            .add({
-              ...validated.data,
-              // Firestore's Admin SDK rejects `undefined` field values outright (this
-              // project doesn't set ignoreUndefinedProperties) — an empty string is
-              // the "no notes" case instead; toLead()/the UI both already treat a
-              // falsy notes value as "nothing to show".
-              notes: composeChatQualificationNotes({
-                budget,
-                goal,
-                zone,
-                bedrooms,
-                bathrooms,
-                urgency,
-                financing,
-                obstacle,
-                notes,
-              }),
-              qualificationScore,
-              status: "new",
-              assignedTo: assignee.uid,
-              createdAt: FieldValue.serverTimestamp(),
-              updatedAt: FieldValue.serverTimestamp(),
-            });
+          await createLeadRecord({
+            ...validated.data,
+            notes: composeChatQualificationNotes({
+              budget,
+              goal,
+              zone,
+              bedrooms,
+              bathrooms,
+              urgency,
+              financing,
+              obstacle,
+              notes,
+            }),
+            qualificationScore,
+            assignedTo: assignee.uid,
+          });
 
           revalidatePath("/dashboard/pipeline");
           revalidatePath("/dashboard/leads");

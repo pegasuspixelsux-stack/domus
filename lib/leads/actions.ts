@@ -9,6 +9,7 @@ import { getProperty } from "@/lib/properties/data";
 import { getTeamMembers } from "@/lib/team/data";
 import { pickRoundRobinAssignee } from "./assignment";
 import { ACTIVITY_TYPES, STATUS_LABELS } from "./constants";
+import { createLeadRecord } from "./create";
 import { getActivities } from "./data";
 import { composePrequalifyNotes, validatePrequalifyInput } from "./prequalify-validation";
 import { validateLeadInput } from "./validation";
@@ -121,17 +122,12 @@ export async function createPropertyInquiry(
     };
   }
 
-  await getFirebaseAdminFirestore()
-    .collection(COLLECTION)
-    .add({
-      ...result.data,
-      source: `Ficha de Propiedad — ${property.title}`,
-      propertyId: property.id,
-      status: "new",
-      assignedTo: salesperson.uid,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+  await createLeadRecord({
+    ...result.data,
+    source: `Ficha de Propiedad — ${property.title}`,
+    propertyId: property.id,
+    assignedTo: salesperson.uid,
+  });
 
   revalidatePath("/dashboard/pipeline");
   return { success: true };
@@ -197,19 +193,14 @@ export async function createPrequalifiedLead(
 
   const { name, email, phone, ...qualification } = result.data;
 
-  await getFirebaseAdminFirestore()
-    .collection(COLLECTION)
-    .add({
-      name,
-      email,
-      phone,
-      source: "Formulario de Precalificación",
-      notes: composePrequalifyNotes(qualification),
-      status: "new",
-      assignedTo: assignee.uid,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+  await createLeadRecord({
+    name,
+    email,
+    phone,
+    source: "Formulario de Precalificación",
+    notes: composePrequalifyNotes(qualification),
+    assignedTo: assignee.uid,
+  });
 
   revalidatePath("/dashboard/pipeline");
   return { success: true, values: raw };
