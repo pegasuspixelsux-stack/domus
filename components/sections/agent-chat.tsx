@@ -112,14 +112,22 @@ export function AgentChat() {
                       );
                     }
 
-                    if (part.type === "tool-bookAppointment" && part.state === "output-available") {
+                    if (part.type === "tool-prequalifyLead" && part.state === "output-available") {
                       const output = part.output as { success: boolean; error?: string };
+                      if (!output.success) {
+                        return (
+                          <p key={index} className="mt-2 text-xs text-muted-foreground italic">
+                            {output.error}
+                          </p>
+                        );
+                      }
                       return (
-                        <p key={index} className="mt-2 text-xs text-muted-foreground italic">
-                          {output.success
-                            ? "Sus datos fueron registrados — un asesor se pondrá en contacto."
-                            : output.error}
-                        </p>
+                        <div key={index} className="mt-2 border-l-4 border-l-accent bg-background p-3 text-foreground">
+                          <p className="text-sm leading-relaxed">
+                            ¡Listo! Un asesor experto se pondrá en contacto contigo a la brevedad con
+                            las mejores opciones.
+                          </p>
+                        </div>
                       );
                     }
 

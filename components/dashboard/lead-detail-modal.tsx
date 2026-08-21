@@ -95,7 +95,17 @@ export function LeadDetailModal({
       <div className="flex max-h-[85vh] w-full max-w-2xl flex-col gap-6 overflow-y-auto bg-background p-8">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="font-serif text-2xl">{lead.name}</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="font-serif text-2xl">{lead.name}</h2>
+              {lead.qualificationScore !== undefined && (
+                <span
+                  className="border border-accent px-2 py-0.5 text-xs tracking-[0.1em] text-accent uppercase"
+                  title="Cantidad de señales de calificación (presupuesto, zona, plazo) que aportó el visitante en el chat"
+                >
+                  Calificación {lead.qualificationScore}/3
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-sm text-muted-foreground">
               {lead.email} · {lead.phone}
             </p>

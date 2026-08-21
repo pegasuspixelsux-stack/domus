@@ -132,3 +132,64 @@ export function validatePrequalifyInput(input: {
     },
   };
 }
+
+const PREQUALIFY_LABELS: Record<string, string> = {
+  budget: "Presupuesto",
+  goal: "Objetivo",
+  zone: "Zona",
+  urgency: "Urgencia",
+  financing: "Financiamiento",
+  obstacle: "Obstáculo",
+};
+
+/** Composes the /precalificacion wizard's six required answers into one free-text note. */
+export function composePrequalifyNotes(data: {
+  budget: string;
+  goal: string;
+  zone: string;
+  urgency: string;
+  financing: string;
+  obstacle: string;
+  notes: string;
+}): string {
+  const lines = (["budget", "goal", "zone", "urgency", "financing", "obstacle"] as const).map(
+    (key) => `${PREQUALIFY_LABELS[key]}: ${data[key]}`,
+  );
+  if (data.notes) {
+    lines.push("", `Notas adicionales: ${data.notes}`);
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Chat-sourced leads rarely have all six wizard fields — the visitor gives
+ * whatever comes up in conversation. Composes only the fields actually
+ * present, unlike composePrequalifyNotes which assumes the full wizard set.
+ */
+export function composeChatQualificationNotes(data: {
+  budget?: string;
+  zone?: string;
+  timeline?: string;
+  notes?: string;
+}): string {
+  const lines: string[] = [];
+  if (data.budget) lines.push(`Presupuesto: ${data.budget}`);
+  if (data.zone) lines.push(`Zona: ${data.zone}`);
+  if (data.timeline) lines.push(`Plazo: ${data.timeline}`);
+  if (data.notes) {
+    if (lines.length > 0) lines.push("");
+    lines.push(`Notas adicionales: ${data.notes}`);
+  }
+  return lines.join("\n");
+}
+
+/**
+ * 0–3: how many of the three qualification signals (budget, zone, timeline)
+ * a chat visitor actually volunteered. A rough completeness signal for the
+ * sales team to triage with, not a predictive score. The wizard's own leads
+ * don't get one — every field there is required, so it would always read
+ * "6/6" and carry no information.
+ */
+export function computeQualificationScore(data: { budget?: string; zone?: string; timeline?: string }): number {
+  return [data.budget, data.zone, data.timeline].filter(Boolean).length;
+}

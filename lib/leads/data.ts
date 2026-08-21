@@ -16,6 +16,7 @@ function toLead(id: string, data: DocumentData): Lead {
     assignedTo: data.assignedTo,
     propertyId: data.propertyId ?? undefined,
     notes: data.notes ?? undefined,
+    qualificationScore: data.qualificationScore ?? undefined,
     createdAt: data.createdAt?.toDate?.().toISOString() ?? new Date().toISOString(),
     updatedAt: data.updatedAt?.toDate?.().toISOString() ?? new Date().toISOString(),
   };

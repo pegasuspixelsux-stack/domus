@@ -10,7 +10,7 @@ import { getTeamMembers } from "@/lib/team/data";
 import { pickRoundRobinAssignee } from "./assignment";
 import { ACTIVITY_TYPES, STATUS_LABELS } from "./constants";
 import { getActivities } from "./data";
-import { validatePrequalifyInput } from "./prequalify-validation";
+import { composePrequalifyNotes, validatePrequalifyInput } from "./prequalify-validation";
 import { validateLeadInput } from "./validation";
 import type { Activity, ActivityType, LeadStatus } from "./types";
 
@@ -152,33 +152,6 @@ export interface PrequalifyActionState {
     obstacle: string;
     notes: string;
   };
-}
-
-const PREQUALIFY_LABELS: Record<string, string> = {
-  budget: "Presupuesto",
-  goal: "Objetivo",
-  zone: "Zona",
-  urgency: "Urgencia",
-  financing: "Financiamiento",
-  obstacle: "Obstáculo",
-};
-
-function composePrequalifyNotes(data: {
-  budget: string;
-  goal: string;
-  zone: string;
-  urgency: string;
-  financing: string;
-  obstacle: string;
-  notes: string;
-}): string {
-  const lines = (["budget", "goal", "zone", "urgency", "financing", "obstacle"] as const).map(
-    (key) => `${PREQUALIFY_LABELS[key]}: ${data[key]}`,
-  );
-  if (data.notes) {
-    lines.push("", `Notas adicionales: ${data.notes}`);
-  }
-  return lines.join("\n");
 }
 
 /**
