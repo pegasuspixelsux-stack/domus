@@ -22,25 +22,21 @@ export function PropertyDetails({ property }: { property: Property }) {
     { label: "Precio", value: `${property.currency} ${property.price.toLocaleString("es-UY")}` },
     { label: "Superficie", value: `${property.areaM2} m²` },
     { label: "Tipo", value: property.tag },
+    { label: "Días en el Mercado", value: String(days) },
   ];
 
   return (
     <section className="border-b border-foreground/10 px-8 py-20 md:px-16 md:py-32">
       <div className="mx-auto flex max-w-[760px] flex-col gap-16">
-        <Reveal className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
-            {stats.map((stat) => (
-              <div key={stat.label} className="flex flex-col gap-2 border-t-4 border-t-accent pt-6">
-                <span className="font-serif text-3xl whitespace-nowrap md:text-4xl">{stat.value}</span>
-                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  {stat.label}
-                </span>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground/70">
-            {days} {days === 1 ? "día" : "días"} en el mercado
-          </p>
+        <Reveal className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+          {stats.map((stat) => (
+            <div key={stat.label} className="flex flex-col gap-2 border-t-4 border-t-accent pt-6">
+              <span className="font-serif text-3xl whitespace-nowrap md:text-4xl">{stat.value}</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                {stat.label}
+              </span>
+            </div>
+          ))}
         </Reveal>
 
         {property.features.length > 0 && (
