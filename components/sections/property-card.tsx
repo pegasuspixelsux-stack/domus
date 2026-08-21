@@ -4,8 +4,9 @@ import type { Property } from "@/lib/properties/types";
 
 /**
  * The card treatment shared by the homepage showcase and the /propiedades
- * grid: photo, title/tag, location (+ price where asked for), and a
- * bed/bath/area stat line. Kept in one place so both call sites can't drift.
+ * grid: photo, then title with price top-right (where asked for), location,
+ * and a tag/bed/bath/area stat line. Kept in one place so both call sites
+ * can't drift.
  */
 export function PropertyCard({
   property,
@@ -31,22 +32,17 @@ export function PropertyCard({
 
       <div className="flex items-baseline justify-between gap-4">
         <h3 className="font-serif text-xl">{property.title}</h3>
-        <span className="shrink-0 text-xs tracking-[0.2em] text-muted-foreground uppercase">
-          {property.tag}
-        </span>
-      </div>
-
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="text-sm text-muted-foreground">{property.location}</p>
         {showPrice && (
-          <p className="text-sm text-foreground">
+          <p className="shrink-0 text-sm text-foreground">
             {property.currency} {property.price.toLocaleString("es-UY")}
           </p>
         )}
       </div>
 
+      <p className="text-sm text-muted-foreground">{property.location}</p>
+
       <p className="text-xs tracking-[0.15em] text-muted-foreground uppercase">
-        {property.bedrooms} dorm · {property.bathrooms} baños · {property.areaM2} m²
+        {property.tag} · {property.bedrooms} dorm · {property.bathrooms} baños · {property.areaM2} m²
       </p>
     </Link>
   );
