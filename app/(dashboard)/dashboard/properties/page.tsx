@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DeletePropertyButton } from "@/components/dashboard/delete-property-button";
+import { ImportPropertiesButton } from "@/components/dashboard/import-properties-button";
 import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/require-role";
 import { getProperties } from "@/lib/properties/data";
@@ -12,9 +13,12 @@ export default async function PropertiesPage() {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-3xl">Propiedades</h1>
-        <Button variant="primary" href="/dashboard/properties/new">
-          Nueva Propiedad
-        </Button>
+        <div className="flex items-center gap-4">
+          <ImportPropertiesButton />
+          <Button variant="primary" href="/dashboard/properties/new">
+            Nueva Propiedad
+          </Button>
+        </div>
       </div>
 
       {properties.length === 0 ? (
