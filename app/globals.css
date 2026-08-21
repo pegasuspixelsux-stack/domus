@@ -21,6 +21,15 @@
   --radius: 0px;
 }
 
+@theme {
+  /* Extra step between the default md (768px) and lg (1024px) — several
+     layouts (e.g. QuienesSomos' single-column → 12-col split) jump straight
+     from stacked to their final desktop grid at lg with nothing changing
+     across the whole tablet range. Use `mdlg:` to add an intermediate step
+     to a specific layout; this token alone doesn't change any existing page. */
+  --breakpoint-mdlg: 56rem; /* 896px */
+}
+
 /* The palette is a deliberate brand choice — it does not follow OS theme. */
 body {
   background: var(--background);
