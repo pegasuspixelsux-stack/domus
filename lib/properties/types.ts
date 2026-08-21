@@ -14,6 +14,7 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   areaM2: number;
+  featured: boolean;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
@@ -32,4 +33,5 @@ export interface PropertyInput {
   bedrooms: number;
   bathrooms: number;
   areaM2: number;
+  featured: boolean;
 }

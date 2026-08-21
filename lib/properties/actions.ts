@@ -22,6 +22,7 @@ export interface PropertyActionState {
     bedrooms: string;
     bathrooms: string;
     areaM2: string;
+    featured: string;
   };
 }
 
@@ -37,6 +38,7 @@ function extractRawValues(formData: FormData): NonNullable<PropertyActionState["
     bedrooms: String(formData.get("bedrooms") ?? ""),
     bathrooms: String(formData.get("bathrooms") ?? ""),
     areaM2: String(formData.get("areaM2") ?? ""),
+    featured: formData.get("featured") ? "true" : "false",
   };
 }
 
@@ -54,6 +56,7 @@ function extractInput(formData: FormData) {
     bedrooms: Number(formData.get("bedrooms")),
     bathrooms: Number(formData.get("bathrooms")),
     areaM2: Number(formData.get("areaM2")),
+    featured: formData.get("featured") === "on",
   };
 }
 
@@ -78,6 +81,7 @@ export async function createProperty(
     });
 
   revalidatePath("/dashboard/properties");
+  revalidatePath("/");
   redirect("/dashboard/properties");
 }
 
@@ -102,6 +106,7 @@ export async function updateProperty(
     });
 
   revalidatePath("/dashboard/properties");
+  revalidatePath("/");
   redirect("/dashboard/properties");
 }
 
@@ -109,4 +114,5 @@ export async function deleteProperty(id: string): Promise<void> {
   await requireRole(["admin"]);
   await getFirebaseAdminFirestore().collection(COLLECTION).doc(id).delete();
   revalidatePath("/dashboard/properties");
+  revalidatePath("/");
 }

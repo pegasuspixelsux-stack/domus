@@ -15,6 +15,7 @@ function validInput() {
     bedrooms: 4,
     bathrooms: 3,
     areaM2: 320,
+    featured: false,
   };
 }
 
@@ -132,5 +133,11 @@ describe("validatePropertyInput", () => {
     const result = validatePropertyInput({ ...validInput(), areaM2: 0 });
     expect(result.valid).toBe(false);
     if (!result.valid) expect(result.errors.areaM2).toBeDefined();
+  });
+
+  it("passes the featured flag through unchanged", () => {
+    const result = validatePropertyInput({ ...validInput(), featured: true });
+    expect(result.valid).toBe(true);
+    if (result.valid) expect(result.data.featured).toBe(true);
   });
 });

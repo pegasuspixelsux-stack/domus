@@ -133,6 +133,18 @@ export function PropertyForm({
         )}
       </div>
 
+      <label className="flex items-center gap-3 text-sm text-foreground">
+        <input
+          type="checkbox"
+          name="featured"
+          defaultChecked={
+            state.values ? state.values.featured === "true" : (property?.featured ?? false)
+          }
+          className="h-4 w-4 border-foreground/40 accent-accent"
+        />
+        Destacado — mostrar en la página de inicio
+      </label>
+
       <div className="grid grid-cols-3 gap-6">
         <Field
           label="Dormitorios"

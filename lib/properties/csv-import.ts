@@ -127,6 +127,7 @@ export function parsePropertiesCsv(csvText: string): PropertyImportResult {
         status: DEFAULT_STATUS,
         images: [],
         features: parseFeatures(record["Características"] ?? ""),
+        featured: false,
       },
     });
   });

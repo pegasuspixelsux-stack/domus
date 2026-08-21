@@ -37,6 +37,7 @@ export async function importProperties(csvText: string): Promise<PropertyImportS
 
   if (valid.length > 0) {
     revalidatePath("/dashboard/properties");
+    revalidatePath("/");
   }
 
   return {

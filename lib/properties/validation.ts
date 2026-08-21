@@ -21,6 +21,7 @@ export function validatePropertyInput(input: {
   bedrooms: number;
   bathrooms: number;
   areaM2: number;
+  featured: boolean;
 }): PropertyValidationResult {
   const errors: PropertyValidationErrors = {};
 
@@ -67,6 +68,7 @@ export function validatePropertyInput(input: {
       bedrooms: input.bedrooms,
       bathrooms: input.bathrooms,
       areaM2: input.areaM2,
+      featured: input.featured,
     },
   };
 }
