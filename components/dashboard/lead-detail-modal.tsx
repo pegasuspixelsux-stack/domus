@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import type { Role } from "@/lib/auth/rbac";
+import { LEAD_MANAGER_ROLES, type Role } from "@/lib/auth/rbac";
 import { addActivity, fetchLeadActivities, reassignLead, updateLeadStatus } from "@/lib/leads/actions";
 import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, LEAD_STATUSES } from "@/lib/leads/constants";
 import type { Activity, ActivityType, Lead, LeadStatus } from "@/lib/leads/types";
@@ -125,7 +125,7 @@ export function LeadDetailModal({
             </select>
           </div>
 
-          {currentRole === "admin" && (
+          {LEAD_MANAGER_ROLES.includes(currentRole) && (
             <div className="flex flex-col gap-2">
               <label className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Asignado a</label>
               <select

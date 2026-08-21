@@ -1,14 +1,10 @@
+import { UsersTable } from "@/components/dashboard/users-table";
 import { requireRole } from "@/lib/auth/require-role";
+import { getAllUsers } from "@/lib/team/data";
 
 export default async function UsersPage() {
   await requireRole(["admin"]);
+  const users = await getAllUsers();
 
-  return (
-    <div>
-      <h1 className="font-serif text-3xl">Usuarios</h1>
-      <p className="mt-4 text-muted-foreground">
-        Próximamente: gestión de privilegios del equipo.
-      </p>
-    </div>
-  );
+  return <UsersTable users={users} />;
 }

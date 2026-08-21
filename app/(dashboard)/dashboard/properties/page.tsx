@@ -2,11 +2,12 @@ import Link from "next/link";
 import { DeletePropertyButton } from "@/components/dashboard/delete-property-button";
 import { ImportPropertiesButton } from "@/components/dashboard/import-properties-button";
 import { Button } from "@/components/ui/button";
+import { PROPERTY_MANAGER_ROLES } from "@/lib/auth/rbac";
 import { requireRole } from "@/lib/auth/require-role";
 import { getProperties } from "@/lib/properties/data";
 
 export default async function PropertiesPage() {
-  await requireRole(["admin"]);
+  await requireRole(PROPERTY_MANAGER_ROLES);
   const properties = await getProperties();
 
   return (

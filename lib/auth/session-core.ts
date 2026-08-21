@@ -15,7 +15,7 @@ export interface FirestoreLike {
 }
 
 function isRole(value: unknown): value is Role {
-  return value === "admin" || value === "sales";
+  return value === "admin" || value === "manager" || value === "sales";
 }
 
 export async function getSessionFromCookie(

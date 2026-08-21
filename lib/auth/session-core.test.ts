@@ -56,6 +56,15 @@ describe("getSessionFromCookie", () => {
     });
   });
 
+  it("accepts the manager role", async () => {
+    const deps = makeDeps({ docData: { exists: true, data: { role: "manager", active: true } } });
+    expect(await getSessionFromCookie("good-cookie", deps)).toEqual({
+      uid: "user-1",
+      role: "manager",
+      active: true,
+    });
+  });
+
   it("queries the correct document path", async () => {
     const deps = makeDeps({ docData: { exists: true, data: { role: "admin", active: true } } });
     await getSessionFromCookie("good-cookie", deps);

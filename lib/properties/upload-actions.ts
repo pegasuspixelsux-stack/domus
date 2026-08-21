@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { PROPERTY_MANAGER_ROLES } from "@/lib/auth/rbac";
 import { requireRole } from "@/lib/auth/require-role";
 import { getFirebaseAdminStorage } from "@/lib/firebase/admin";
 import { MAX_IMAGE_BYTES } from "./upload-constants";
@@ -19,7 +20,7 @@ function extensionFor(file: File): string {
 }
 
 export async function uploadPropertyImages(formData: FormData): Promise<UploadPropertyImagesResult> {
-  await requireRole(["admin"]);
+  await requireRole(PROPERTY_MANAGER_ROLES);
 
   const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
   if (!bucketName) {

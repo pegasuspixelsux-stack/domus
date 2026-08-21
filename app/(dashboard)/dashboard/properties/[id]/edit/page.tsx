@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { PropertyForm } from "@/components/dashboard/property-form";
+import { PROPERTY_MANAGER_ROLES } from "@/lib/auth/rbac";
 import { requireRole } from "@/lib/auth/require-role";
 import { updateProperty } from "@/lib/properties/actions";
 import { getProperty } from "@/lib/properties/data";
@@ -9,7 +10,7 @@ export default async function EditPropertyPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole(["admin"]);
+  await requireRole(PROPERTY_MANAGER_ROLES);
   const { id } = await params;
   const property = await getProperty(id);
 

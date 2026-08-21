@@ -2,6 +2,7 @@
 
 import { FieldValue } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
+import { LEAD_MANAGER_ROLES, PIPELINE_ROLES } from "@/lib/auth/rbac";
 import { requireRole } from "@/lib/auth/require-role";
 import { getFirebaseAdminFirestore } from "@/lib/firebase/admin";
 import { getProperty } from "@/lib/properties/data";
@@ -38,7 +39,7 @@ export async function createLead(
   _prevState: LeadActionState,
   formData: FormData,
 ): Promise<LeadActionState> {
-  const session = await requireRole(["admin", "sales"]);
+  const session = await requireRole(PIPELINE_ROLES);
   const result = validateLeadInput(extractInput(formData));
 
   if (!result.valid) {
@@ -135,7 +136,7 @@ export async function createPropertyInquiry(
 }
 
 async function assertCanManageLead(leadId: string) {
-  const session = await requireRole(["admin", "sales"]);
+  const session = await requireRole(PIPELINE_ROLES);
   const firestore = getFirebaseAdminFirestore();
   const doc = await firestore.collection(COLLECTION).doc(leadId).get();
 
@@ -218,7 +219,7 @@ export async function addActivity(
 }
 
 export async function reassignLead(leadId: string, newAssigneeUid: string): Promise<void> {
-  await requireRole(["admin"]);
+  await requireRole(LEAD_MANAGER_ROLES);
 
   const firestore = getFirebaseAdminFirestore();
   const leadRef = firestore.collection(COLLECTION).doc(leadId);

@@ -1,9 +1,10 @@
 import { PropertyForm } from "@/components/dashboard/property-form";
+import { PROPERTY_MANAGER_ROLES } from "@/lib/auth/rbac";
 import { requireRole } from "@/lib/auth/require-role";
 import { createProperty } from "@/lib/properties/actions";
 
 export default async function NewPropertyPage() {
-  await requireRole(["admin"]);
+  await requireRole(PROPERTY_MANAGER_ROLES);
 
   return (
     <div className="flex flex-col gap-8">

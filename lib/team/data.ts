@@ -25,3 +25,30 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
     .filter((doc) => doc.data().active !== false)
     .map((doc) => toTeamMember(doc.id, doc.data()));
 }
+
+export interface AdminUser {
+  uid: string;
+  displayName: string;
+  email: string;
+  role: Role;
+  active: boolean;
+}
+
+/**
+ * Every user account, active or not, for the admin-only Usuarios page —
+ * unlike `getTeamMembers()`, which deliberately hides deactivated accounts
+ * from assignee pickers elsewhere in the app.
+ */
+export async function getAllUsers(): Promise<AdminUser[]> {
+  const snapshot = await getFirebaseAdminFirestore().collection("users").get();
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      uid: doc.id,
+      displayName: data.displayName || data.email || doc.id,
+      email: data.email ?? "",
+      role: data.role,
+      active: data.active !== false,
+    };
+  });
+}

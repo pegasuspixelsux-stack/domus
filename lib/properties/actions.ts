@@ -3,6 +3,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { PROPERTY_MANAGER_ROLES } from "@/lib/auth/rbac";
 import { requireRole } from "@/lib/auth/require-role";
 import { getFirebaseAdminFirestore } from "@/lib/firebase/admin";
 import { validatePropertyInput } from "./validation";
@@ -64,7 +65,7 @@ export async function createProperty(
   _prevState: PropertyActionState,
   formData: FormData,
 ): Promise<PropertyActionState> {
-  const session = await requireRole(["admin"]);
+  const session = await requireRole(PROPERTY_MANAGER_ROLES);
   const result = validatePropertyInput(extractInput(formData));
 
   if (!result.valid) {
@@ -90,7 +91,7 @@ export async function updateProperty(
   _prevState: PropertyActionState,
   formData: FormData,
 ): Promise<PropertyActionState> {
-  await requireRole(["admin"]);
+  await requireRole(PROPERTY_MANAGER_ROLES);
   const result = validatePropertyInput(extractInput(formData));
 
   if (!result.valid) {
@@ -111,7 +112,7 @@ export async function updateProperty(
 }
 
 export async function deleteProperty(id: string): Promise<void> {
-  await requireRole(["admin"]);
+  await requireRole(PROPERTY_MANAGER_ROLES);
   await getFirebaseAdminFirestore().collection(COLLECTION).doc(id).delete();
   revalidatePath("/dashboard/properties");
   revalidatePath("/");

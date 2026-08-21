@@ -9,6 +9,10 @@ describe("getDefaultRouteForRole", () => {
   it("sends sales staff to the pipeline page", () => {
     expect(getDefaultRouteForRole("sales")).toBe("/dashboard/pipeline");
   });
+
+  it("sends managers to the properties page", () => {
+    expect(getDefaultRouteForRole("manager")).toBe("/dashboard/properties");
+  });
 });
 
 describe("getNavItemsForRole", () => {
@@ -20,5 +24,10 @@ describe("getNavItemsForRole", () => {
     const items = getNavItemsForRole("sales");
     expect(items).toHaveLength(1);
     expect(items[0].href).toBe("/dashboard/pipeline");
+  });
+
+  it("gives managers properties and pipeline, but not users", () => {
+    const items = getNavItemsForRole("manager");
+    expect(items.map((item) => item.href)).toEqual(["/dashboard/properties", "/dashboard/pipeline"]);
   });
 });

@@ -2,6 +2,7 @@
 
 import { FieldValue } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
+import { PROPERTY_MANAGER_ROLES } from "@/lib/auth/rbac";
 import { requireRole } from "@/lib/auth/require-role";
 import { getFirebaseAdminFirestore } from "@/lib/firebase/admin";
 import { parsePropertiesCsv } from "./csv-import";
@@ -18,7 +19,7 @@ function summarizeRowErrors(errors: Record<string, string>): string {
 }
 
 export async function importProperties(csvText: string): Promise<PropertyImportSummary> {
-  const session = await requireRole(["admin"]);
+  const session = await requireRole(PROPERTY_MANAGER_ROLES);
   const { valid, invalid } = parsePropertiesCsv(csvText);
 
   const firestore = getFirebaseAdminFirestore();
