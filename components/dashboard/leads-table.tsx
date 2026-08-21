@@ -39,10 +39,10 @@ export function LeadsTable({
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="font-serif text-3xl">Leads</h1>
+      <h1 className="font-serif text-3xl">Prospectos</h1>
 
       {sorted.length === 0 ? (
-        <p className="text-muted-foreground">No hay leads cargados todavía.</p>
+        <p className="text-muted-foreground">No hay prospectos cargados todavía.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">

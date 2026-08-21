@@ -20,8 +20,8 @@ export default async function DashboardHomePage() {
   const kpis = [
     { label: "Total Propiedades", value: properties.length },
     { label: "Disponibles", value: properties.filter((p) => p.status === "available").length },
-    { label: "Total Leads", value: leads.length },
-    { label: "Leads Nuevos", value: leads.filter((l) => l.status === "new").length },
+    { label: "Total Prospectos", value: leads.length },
+    { label: "Prospectos Nuevos", value: leads.filter((l) => l.status === "new").length },
   ];
 
   const latestProperties = properties.slice(0, LATEST_LIMIT);
@@ -92,7 +92,7 @@ export default async function DashboardHomePage() {
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-serif text-xl">Últimos Leads</h2>
+          <h2 className="font-serif text-xl">Últimos Prospectos</h2>
           <Link
             href="/dashboard/pipeline"
             className="text-xs tracking-[0.2em] text-muted-foreground uppercase transition-colors duration-500 hover:text-accent"
@@ -102,7 +102,7 @@ export default async function DashboardHomePage() {
         </div>
 
         {latestLeads.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay leads cargados todavía.</p>
+          <p className="text-sm text-muted-foreground">No hay prospectos cargados todavía.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">

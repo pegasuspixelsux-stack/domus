@@ -24,8 +24,8 @@ export interface NavItem {
 export const DASHBOARD_NAV_ITEMS: NavItem[] = [
   { label: "Panel de Control", href: "/dashboard", roles: PROPERTY_MANAGER_ROLES },
   { label: "Propiedades", href: "/dashboard/properties", roles: PROPERTY_MANAGER_ROLES },
-  { label: "Pipeline", href: "/dashboard/pipeline", roles: PIPELINE_ROLES },
-  { label: "Leads", href: "/dashboard/leads", roles: PIPELINE_ROLES },
+  { label: "Embudo de Ventas", href: "/dashboard/pipeline", roles: PIPELINE_ROLES },
+  { label: "Prospectos", href: "/dashboard/leads", roles: PIPELINE_ROLES },
   { label: "Usuarios", href: "/dashboard/users", roles: ["admin"] },
 ];
 

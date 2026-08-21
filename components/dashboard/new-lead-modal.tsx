@@ -18,7 +18,7 @@ export function NewLeadModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-8">
       <div className="w-full max-w-md bg-background p-8">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="font-serif text-2xl">Nuevo Lead</h2>
+          <h2 className="font-serif text-2xl">Nuevo Prospecto</h2>
           <button
             type="button"
             onClick={onClose}
@@ -56,7 +56,7 @@ export function NewLeadModal({ onClose }: { onClose: () => void }) {
           />
 
           <Button type="submit" variant="primary" disabled={pending} className="w-full">
-            {pending ? "Guardando…" : "Crear Lead"}
+            {pending ? "Guardando…" : "Crear Prospecto"}
           </Button>
         </form>
       </div>
