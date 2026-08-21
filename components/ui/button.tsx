@@ -10,6 +10,8 @@ type ButtonOwnProps = {
   href?: string;
   /** Forwarded to the underlying `Link` when `href` is set — use "_blank" for external links (e.g. WhatsApp). */
   target?: string;
+  /** Works with `href` too (e.g. closing a mobile menu on tap), unlike a plain button's onClick. */
+  onClick?: () => void;
   className?: string;
   children: ReactNode;
 };
@@ -58,6 +60,7 @@ export function Button({
   invert = false,
   href,
   target,
+  onClick,
   className = "",
   children,
   ...props
@@ -83,6 +86,7 @@ export function Button({
         href={href}
         target={target}
         rel={target === "_blank" ? "noopener noreferrer" : undefined}
+        onClick={onClick}
         className={classes}
       >
         {inner}
@@ -91,7 +95,7 @@ export function Button({
   }
 
   return (
-    <button className={classes} {...props}>
+    <button className={classes} onClick={onClick} {...props}>
       {inner}
     </button>
   );
