@@ -5,15 +5,15 @@ import { SectionLabel } from "@/components/ui/section-label";
 const features = [
   {
     title: "Selección Curada",
-    body: "Solo incorporamos propiedades que superan nuestros propios estándares de ubicación, construcción y potencial de revalorización.",
+    body: "Solo incorporamos propiedades que superan nuestros propios estándares de ubicación, construcción y potencial de revalorización. Antes de sumar una propiedad al portfolio, la visitamos personalmente, evaluamos su entorno y comparamos su precio contra operaciones recientes de la zona — así nunca le mostramos algo que nosotros mismos no compraríamos.",
   },
   {
     title: "Asesoría de Inversión",
-    body: "Analizamos cada operación con el mismo rigor que un fondo institucional: retorno esperado, liquidez y horizonte de salida.",
+    body: "Analizamos cada operación con el mismo rigor que un fondo institucional: retorno esperado, liquidez y horizonte de salida. Le presentamos números claros, no promesas — proyecciones de renta, costos de mantenimiento y escenarios de reventa, para que decida con la misma información que usaría cualquier inversor profesional.",
   },
   {
     title: "Acompañamiento Integral",
-    body: "Desde la primera visita hasta la escritura, un mismo asesor lo acompaña en cada etapa — sin intermediarios, sin sorpresas.",
+    body: "Desde la primera visita hasta la escritura, un mismo asesor lo acompaña en cada etapa — sin intermediarios, sin sorpresas. Coordinamos inspecciones, trámites notariales y gestiones bancarias en su nombre, y seguimos disponibles después del cierre para lo que necesite.",
   },
 ];
 
@@ -29,14 +29,11 @@ export function Features() {
         </Reveal>
 
         <RevealGroup className="grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-8 lg:gap-12">
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <RevealGroupItem key={feature.title} className="flex flex-col">
-              <span className="font-serif text-5xl text-muted-foreground/30 md:text-6xl">
-                0{index + 1}
-              </span>
-              <div className="border-t-4 border-t-accent pt-8">
-                <h3 className="font-serif text-2xl md:text-3xl">{feature.title}</h3>
-                <p className="mt-4 max-w-sm text-base leading-relaxed text-muted-foreground">
+              <h3 className="font-serif text-2xl md:text-3xl">{feature.title}</h3>
+              <div className="mt-4 border-t-4 border-t-accent pt-6">
+                <p className="max-w-md text-base leading-relaxed text-muted-foreground">
                   {feature.body}
                 </p>
               </div>

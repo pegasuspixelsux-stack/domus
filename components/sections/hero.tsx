@@ -38,7 +38,7 @@ export function Hero() {
         </p>
 
         <div className="flex flex-col gap-4 sm:flex-row">
-          <Button variant="primary" href="#propiedades">
+          <Button variant="primary" href="/propiedades">
             Ver Propiedades
           </Button>
           <Button variant="secondary" invert href="#contacto">
