@@ -34,7 +34,51 @@ export function CtaFooter() {
         </RevealGroupItem>
       </RevealGroup>
 
-      <div className="mx-auto mt-24 flex max-w-[1600px] flex-col items-center justify-between gap-4 border-t border-background/10 pt-8 text-[10px] tracking-[0.2em] text-background/50 uppercase sm:flex-row">
+      <div className="mx-auto mt-24 grid max-w-[1600px] grid-cols-2 gap-x-8 gap-y-12 border-t border-background/10 pt-16 md:grid-cols-4 md:gap-12">
+        <div className="col-span-2 flex flex-col gap-3 md:col-span-1">
+          <span className="font-serif text-xl tracking-tight text-background">Domus</span>
+          <p className="max-w-xs text-sm leading-relaxed text-background/70">
+            Domus selecciona propiedades de ocio e inversión en Punta del Este, acompañando a
+            cada cliente de principio a fin.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <span className="text-xs tracking-[0.2em] text-background/50 uppercase">Menú</span>
+          <nav className="flex flex-col gap-2 text-sm text-background/70">
+            <Link href="/propiedades" className="w-fit transition-colors duration-500 hover:text-accent">
+              Propiedades
+            </Link>
+            <Link href="/nosotros" className="w-fit transition-colors duration-500 hover:text-accent">
+              Nosotros
+            </Link>
+            <Link href="/precalificacion" className="w-fit transition-colors duration-500 hover:text-accent">
+              Precalificación
+            </Link>
+            <Link href="#testimonios" className="w-fit transition-colors duration-500 hover:text-accent">
+              Testimonios
+            </Link>
+          </nav>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <span className="text-xs tracking-[0.2em] text-background/50 uppercase">Contacto</span>
+          <div className="flex flex-col gap-2 text-sm text-background/70">
+            <span>[Teléfono / WhatsApp a confirmar]</span>
+            <span>[Correo a confirmar]</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <span className="text-xs tracking-[0.2em] text-background/50 uppercase">Horario y Ubicación</span>
+          <div className="flex flex-col gap-2 text-sm text-background/70">
+            <span>[Horario de atención a confirmar]</span>
+            <span>[Dirección a confirmar]</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto mt-12 flex max-w-[1600px] flex-col items-center justify-between gap-4 border-t border-background/10 pt-8 text-[10px] tracking-[0.2em] text-background/50 uppercase sm:flex-row">
         <span>© 2026 Domus Punta del Este. Todos los derechos reservados.</span>
         <div className="flex items-center gap-6">
           <span>Propiedades de ocio e inversión.</span>
