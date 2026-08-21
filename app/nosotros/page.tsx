@@ -20,6 +20,10 @@ export default function NosotrosPage() {
             <h1 className="font-serif text-4xl leading-[1] tracking-tight md:text-5xl lg:text-6xl">
               Bienes raíces con <em className="text-accent italic">nombre y apellido</em>.
             </h1>
+            <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
+              Conozca al equipo, los valores y el compromiso detrás de cada propiedad que le
+              mostramos.
+            </p>
           </div>
         </section>
 
