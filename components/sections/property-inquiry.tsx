@@ -37,21 +37,18 @@ export function PropertyInquiry({
   )}`;
 
   return (
-    <section
-      id="consultar"
-      className="border-b border-foreground/10 bg-foreground px-8 py-20 text-background md:px-16 md:py-32"
-    >
+    <section id="consultar" className="border-b border-foreground/10 px-8 py-20 md:px-16 md:py-32">
       <RevealGroup className="mx-auto flex max-w-[760px] flex-col gap-16">
         <RevealGroupItem className="flex flex-col gap-6">
-          <SectionLabel invert>Consultar por esta Propiedad</SectionLabel>
+          <SectionLabel>Consultar por esta Propiedad</SectionLabel>
           <h2 className="font-serif text-4xl leading-[0.95] tracking-tight md:text-5xl">
             ¿Le interesa <em className="text-accent italic">{property.title}</em>?
           </h2>
-          <p className="max-w-md text-base leading-relaxed text-background/70">
+          <p className="max-w-md text-base leading-relaxed text-muted-foreground">
             Escríbanos por WhatsApp para una respuesta inmediata, o déjenos sus datos y un asesor
             se pondrá en contacto.
           </p>
-          <Button variant="secondary" invert href={whatsappHref} target="_blank" className="w-fit">
+          <Button variant="secondary" href={whatsappHref} target="_blank" className="w-fit">
             Escribir por WhatsApp
           </Button>
         </RevealGroupItem>
@@ -59,7 +56,7 @@ export function PropertyInquiry({
         {salespeople.length > 0 && (
           <RevealGroupItem className="w-full">
             {state.success ? (
-              <p className="text-lg text-background/90">
+              <p className="text-lg text-foreground/90">
                 Gracias — un asesor se pondrá en contacto a la brevedad.
               </p>
             ) : (
@@ -77,14 +74,14 @@ export function PropertyInquiry({
                 <Field label="Teléfono" name="phone" error={state.errors?.phone} defaultValue={state.values?.phone} />
 
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="salespersonId" className="text-xs uppercase tracking-[0.2em] text-background/70">
+                  <label htmlFor="salespersonId" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                     Asesor
                   </label>
                   <select
                     id="salespersonId"
                     name="salespersonId"
                     defaultValue={state.values?.salespersonId ?? ""}
-                    className="h-12 w-full border-b border-background/40 bg-transparent px-0 text-sm text-background focus-visible:border-accent focus-visible:outline-none"
+                    className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
                   >
                     <option value="">Seleccione un asesor</option>
                     {salespeople.map((person) => (
@@ -94,19 +91,19 @@ export function PropertyInquiry({
                     ))}
                   </select>
                   {state.errors?.salespersonId && (
-                    <p role="alert" className="text-sm text-red-300">
+                    <p role="alert" className="text-sm text-red-600">
                       {state.errors.salespersonId}
                     </p>
                   )}
                 </div>
 
                 {state.errors?.form && (
-                  <p role="alert" className="text-sm text-red-300">
+                  <p role="alert" className="text-sm text-red-600">
                     {state.errors.form}
                   </p>
                 )}
 
-                <Button type="submit" variant="primary" invert disabled={pending} className="w-full sm:w-auto">
+                <Button type="submit" variant="primary" disabled={pending} className="w-full sm:w-auto">
                   {pending ? "Enviando…" : "Enviar Consulta"}
                 </Button>
               </form>
@@ -133,7 +130,7 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={name} className="text-xs uppercase tracking-[0.2em] text-background/70">
+      <label htmlFor={name} className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
         {label}
       </label>
       <input
@@ -141,10 +138,10 @@ function Field({
         name={name}
         type={type}
         defaultValue={defaultValue}
-        className="h-12 w-full border-b border-background/40 bg-transparent px-0 text-sm text-background focus-visible:border-accent focus-visible:outline-none"
+        className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
       />
       {error && (
-        <p role="alert" className="text-sm text-red-300">
+        <p role="alert" className="text-sm text-red-600">
           {error}
         </p>
       )}
