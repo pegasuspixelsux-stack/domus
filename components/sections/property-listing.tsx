@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { PlaceholderImage } from "@/components/ui/placeholder-image";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { RevealGroup, RevealGroupItem } from "@/components/ui/reveal-group";
 import type { Property } from "@/lib/properties/types";
+import { PropertyCard } from "./property-card";
 
 const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
+const PAGE_SIZE = 9;
 
 /**
  * Two-column property browser: instant client-side filters on the left,
@@ -44,6 +45,19 @@ export function PropertyListing({ properties }: { properties: Property[] }) {
   }, [properties, location, tag, minBedrooms, minPrice, maxPrice]);
 
   const hasActiveFilters = Boolean(location || tag || minBedrooms || minPrice || maxPrice);
+
+  const [page, setPage] = useState(1);
+
+  // A filter change can shrink the result set below the page the visitor was
+  // on — always land back on page 1 rather than showing an empty page.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1);
+  }, [location, tag, minBedrooms, minPrice, maxPrice]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   function clearFilters() {
     setLocation("");
@@ -131,37 +145,36 @@ export function PropertyListing({ properties }: { properties: Property[] }) {
             </p>
           ) : (
             <RevealGroup className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((property) => (
+              {paginated.map((property) => (
                 <RevealGroupItem key={property.id}>
-                  <Link href={`/propiedades/${property.id}`} className="group flex flex-col gap-4">
-                    {property.images[0] ? (
-                      <div className="relative aspect-[4/5] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition-shadow duration-500 group-hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- property photo URLs are arbitrary admin-entered hosts, not in next.config.ts's image allowlist */}
-                        <img
-                          src={property.images[0]}
-                          alt={property.title}
-                          className="absolute inset-0 h-full w-full origin-center scale-100 object-cover grayscale transition-[transform,filter] duration-[1800ms] ease-out group-hover:scale-105 group-hover:grayscale-0"
-                        />
-                      </div>
-                    ) : (
-                      <PlaceholderImage aspect="aspect-[4/5]" tone="blog" />
-                    )}
-                    <div className="flex items-baseline justify-between gap-4">
-                      <h3 className="font-serif text-xl">{property.title}</h3>
-                      <span className="shrink-0 text-xs tracking-[0.2em] text-muted-foreground uppercase">
-                        {property.tag}
-                      </span>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-4">
-                      <p className="text-sm text-muted-foreground">{property.location}</p>
-                      <p className="text-sm text-foreground">
-                        {property.currency} {property.price.toLocaleString("es-UY")}
-                      </p>
-                    </div>
-                  </Link>
+                  <PropertyCard property={property} showPrice />
                 </RevealGroupItem>
               ))}
             </RevealGroup>
+          )}
+
+          {pageCount > 1 && (
+            <div className="mt-16 flex items-center justify-between gap-4">
+              <Button
+                variant="secondary"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                Anterior
+              </Button>
+              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                Página {currentPage} de {pageCount}
+              </span>
+              <Button
+                variant="secondary"
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                disabled={currentPage === pageCount}
+                className="disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                Siguiente
+              </Button>
+            </div>
           )}
         </div>
       </div>
