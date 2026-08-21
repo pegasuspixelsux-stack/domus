@@ -15,10 +15,12 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 /**
- * Full-bleed hero for a property detail page: the same grayscale → color,
- * bottom-scrim treatment as the homepage `Hero`, but cycling through every
- * photo instead of showing one. Manual navigation only (arrows + dots) —
- * no autoplay. Arrows/dots are omitted entirely for 0–1 photos.
+ * Full-bleed hero for a property detail page: cycles through every photo,
+ * shown plain (no grayscale/hover effect, unlike the homepage `Hero`) since
+ * the photos themselves are the point here — only the bottom third carries a
+ * scrim, just enough to keep the text block legible. Manual navigation only
+ * (arrows + dots) — no autoplay. Arrows/dots are omitted entirely for 0–1
+ * photos.
  */
 export function PropertyHero({ property }: { property: Property }) {
   const [index, setIndex] = useState(0);
@@ -33,7 +35,7 @@ export function PropertyHero({ property }: { property: Property }) {
   }
 
   return (
-    <section className="group relative flex min-h-screen items-end overflow-hidden border-b border-foreground/10 px-8 pt-32 pb-20 md:px-16 md:pb-28">
+    <section className="relative flex min-h-screen items-end overflow-hidden border-b border-foreground/10 px-8 pt-32 pb-20 md:px-16 md:pb-28">
       {images.length > 0 ? (
         <AnimatePresence>
           <motion.img
@@ -44,15 +46,15 @@ export function PropertyHero({ property }: { property: Property }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1, ease: EASE }}
-            className="absolute inset-0 h-full w-full object-cover object-center grayscale transition-[filter] duration-[1800ms] ease-out group-hover:grayscale-0"
+            className="absolute inset-0 h-full w-full object-cover object-center"
           />
         </AnimatePresence>
       ) : (
         <PlaceholderImage fill tone="hero" />
       )}
 
-      {/* Scrim for text legibility — deepens toward the bottom-left content. */}
-      <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/40 to-foreground/5" />
+      {/* Localized scrim behind the text block only — the rest of the photo stays plain. */}
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/80 to-transparent" />
 
       {hasMultiple && (
         <>
