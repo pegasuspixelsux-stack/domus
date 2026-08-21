@@ -8,6 +8,8 @@ type ButtonOwnProps = {
   /** Use on dark (inverted) sections so the button reads correctly. */
   invert?: boolean;
   href?: string;
+  /** Forwarded to the underlying `Link` when `href` is set — use "_blank" for external links (e.g. WhatsApp). */
+  target?: string;
   className?: string;
   children: ReactNode;
 };
@@ -55,6 +57,7 @@ export function Button({
   variant = "primary",
   invert = false,
   href,
+  target,
   className = "",
   children,
   ...props
@@ -76,7 +79,12 @@ export function Button({
 
   if (href) {
     return (
-      <Link href={href} className={classes}>
+      <Link
+        href={href}
+        target={target}
+        rel={target === "_blank" ? "noopener noreferrer" : undefined}
+        className={classes}
+      >
         {inner}
       </Link>
     );

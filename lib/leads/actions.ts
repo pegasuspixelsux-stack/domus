@@ -4,6 +4,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/require-role";
 import { getFirebaseAdminFirestore } from "@/lib/firebase/admin";
+import { getProperty } from "@/lib/properties/data";
+import { getTeamMembers } from "@/lib/team/data";
 import { ACTIVITY_TYPES, STATUS_LABELS } from "./constants";
 import { getActivities } from "./data";
 import { validateLeadInput } from "./validation";
@@ -51,6 +53,79 @@ export async function createLead(
       ...result.data,
       status: "new",
       assignedTo: session.uid,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+  revalidatePath("/dashboard/pipeline");
+  return { success: true };
+}
+
+export interface PropertyInquiryState {
+  errors?: Record<string, string>;
+  success?: boolean;
+  values?: {
+    name: string;
+    email: string;
+    phone: string;
+    salespersonId: string;
+  };
+}
+
+/**
+ * Public counterpart to `createLead` — no auth required, since it's
+ * submitted by an anonymous visitor from a property detail page. Reuses the
+ * same validation for name/email/phone, but the salesperson picked in the
+ * form and the property it was submitted from are both re-verified against
+ * Firestore rather than trusted from the client: a public POST can send any
+ * uid or property id, and an unverified `assignedTo` would silently orphan
+ * the lead (or hand it to whoever guessed a valid uid).
+ */
+export async function createPropertyInquiry(
+  _prevState: PropertyInquiryState,
+  formData: FormData,
+): Promise<PropertyInquiryState> {
+  const propertyId = String(formData.get("propertyId") ?? "").trim();
+  const salespersonId = String(formData.get("salespersonId") ?? "").trim();
+  const raw = {
+    name: String(formData.get("name") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    phone: String(formData.get("phone") ?? ""),
+  };
+  const values = { ...raw, salespersonId };
+
+  const result = validateLeadInput({ ...raw, source: "Ficha de Propiedad" });
+  if (!result.valid) {
+    return { errors: result.errors, values };
+  }
+
+  if (!salespersonId) {
+    return { errors: { salespersonId: "Seleccione un asesor." }, values };
+  }
+
+  const [property, salespeople] = await Promise.all([
+    propertyId ? getProperty(propertyId) : Promise.resolve(null),
+    getTeamMembers(),
+  ]);
+  const salesperson = salespeople.find(
+    (member) => member.role === "sales" && member.uid === salespersonId,
+  );
+
+  if (!property || !salesperson) {
+    return {
+      errors: { form: "No se pudo enviar la consulta. Actualice la página e intente de nuevo." },
+      values,
+    };
+  }
+
+  await getFirebaseAdminFirestore()
+    .collection(COLLECTION)
+    .add({
+      ...result.data,
+      source: `Ficha de Propiedad — ${property.title}`,
+      propertyId: property.id,
+      status: "new",
+      assignedTo: salesperson.uid,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
