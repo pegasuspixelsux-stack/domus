@@ -38,6 +38,8 @@ export function validatePropertyInput(input: {
   }
   if (!input.images.some((url) => url.trim())) {
     errors.images = "Agregue al menos una imagen.";
+  } else if (input.images.length > 10) {
+    errors.images = "Máximo 10 imágenes por propiedad.";
   }
   if (!Number.isInteger(input.bedrooms) || input.bedrooms < 0) {
     errors.bedrooms = "Los dormitorios deben ser un número entero mayor o igual a cero.";

@@ -95,6 +95,23 @@ describe("validatePropertyInput", () => {
     if (!result.valid) expect(result.errors.images).toBeDefined();
   });
 
+  it("rejects more than 10 images", () => {
+    const result = validatePropertyInput({
+      ...validInput(),
+      images: Array.from({ length: 11 }, (_, i) => `https://example.com/${i}.jpg`),
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) expect(result.errors.images).toBeDefined();
+  });
+
+  it("accepts exactly 10 images", () => {
+    const result = validatePropertyInput({
+      ...validInput(),
+      images: Array.from({ length: 10 }, (_, i) => `https://example.com/${i}.jpg`),
+    });
+    expect(result.valid).toBe(true);
+  });
+
   it("accepts an empty features array", () => {
     const result = validatePropertyInput({ ...validInput(), features: [] });
     expect(result.valid).toBe(true);

@@ -1,9 +1,11 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { type ChangeEvent, useActionState, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import type { PropertyActionState } from "@/lib/properties/actions";
 import type { Property, PropertyStatus } from "@/lib/properties/types";
+import { uploadPropertyImages } from "@/lib/properties/upload-actions";
+import { MAX_IMAGE_BYTES, MAX_IMAGES_PER_PROPERTY } from "@/lib/properties/upload-constants";
 
 const STATUS_OPTIONS: { value: PropertyStatus; label: string }[] = [
   { value: "available", label: "Disponible" },
@@ -27,8 +29,10 @@ export function PropertyForm({
   const [features, setFeatures] = useState<string[]>(property?.features ?? []);
   const [featureInput, setFeatureInput] = useState("");
   const [images, setImages] = useState<{ id: string; value: string }[]>(
-    (property?.images ?? [""]).map((value) => ({ id: crypto.randomUUID(), value })),
+    (property?.images ?? []).map((value) => ({ id: crypto.randomUUID(), value })),
   );
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploading, startUpload] = useTransition();
 
   function addFeature() {
     const value = featureInput.trim();
@@ -42,16 +46,50 @@ export function PropertyForm({
     setFeatures(features.filter((f) => f !== value));
   }
 
-  function updateImage(id: string, value: string) {
-    setImages(images.map((img) => (img.id === id ? { ...img, value } : img)));
-  }
-
-  function addImageRow() {
-    setImages([...images, { id: crypto.randomUUID(), value: "" }]);
-  }
-
   function removeImageRow(id: string) {
     setImages(images.filter((img) => img.id !== id));
+  }
+
+  function handleFilesSelected(event: ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (selected.length === 0) return;
+
+    setUploadError(null);
+
+    const remainingSlots = MAX_IMAGES_PER_PROPERTY - images.length;
+    if (remainingSlots <= 0) {
+      setUploadError(`Ya alcanzó el máximo de ${MAX_IMAGES_PER_PROPERTY} imágenes.`);
+      return;
+    }
+
+    const toUpload = selected.slice(0, remainingSlots);
+    const oversized = toUpload.filter((file) => file.size > MAX_IMAGE_BYTES);
+    if (oversized.length > 0) {
+      setUploadError(`${oversized.map((f) => f.name).join(", ")}: supera los 5MB.`);
+    }
+    const withinLimit = toUpload.filter((file) => file.size <= MAX_IMAGE_BYTES);
+    if (withinLimit.length === 0) return;
+
+    const formData = new FormData();
+    withinLimit.forEach((file) => formData.append("files", file));
+
+    startUpload(async () => {
+      try {
+        const result = await uploadPropertyImages(formData);
+        if (result.urls.length > 0) {
+          setImages((current) => [
+            ...current,
+            ...result.urls.map((value) => ({ id: crypto.randomUUID(), value })),
+          ]);
+        }
+        if (result.errors.length > 0) {
+          setUploadError(result.errors.join(" "));
+        }
+      } catch {
+        setUploadError("No se pudieron subir las imágenes. Intente de nuevo.");
+      }
+    });
   }
 
   return (
@@ -204,32 +242,52 @@ export function PropertyForm({
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Imágenes (URL)</span>
-        {images.map((image) => (
-          <div key={image.id} className="flex items-center gap-2">
-            <input
-              type="text"
-              name="images"
-              value={image.value}
-              onChange={(event) => updateImage(image.id, event.target.value)}
-              placeholder="https://..."
-              className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
-            />
-            {images.length > 1 && (
-              <button type="button" onClick={() => removeImageRow(image.id)} className="text-muted-foreground hover:text-accent">
-                ×
-              </button>
-            )}
+      <div className="flex flex-col gap-3">
+        <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          Imágenes ({images.length}/{MAX_IMAGES_PER_PROPERTY})
+        </span>
+
+        {images.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+            {images.map((image) => (
+              <div key={image.id} className="group relative aspect-square overflow-hidden border border-foreground/10">
+                <input type="hidden" name="images" value={image.value} />
+                {/* eslint-disable-next-line @next/next/no-img-element -- admin-uploaded Storage URLs, previewed as-is */}
+                <img src={image.value} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeImageRow(image.id)}
+                  className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center bg-foreground/70 text-xs text-background opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  aria-label="Quitar imagen"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
-        <button
-          type="button"
-          onClick={addImageRow}
-          className="self-start text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-accent"
-        >
-          + Agregar imagen
-        </button>
+        )}
+
+        {images.length < MAX_IMAGES_PER_PROPERTY && (
+          <label className="flex h-12 w-full max-w-xs cursor-pointer items-center justify-center border border-foreground/40 text-xs tracking-[0.2em] text-foreground uppercase transition-colors duration-500 hover:bg-foreground hover:text-background">
+            {uploading ? "Subiendo…" : "Subir Imágenes"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              className="hidden"
+              onChange={handleFilesSelected}
+              disabled={uploading}
+            />
+          </label>
+        )}
+
+        <p className="text-xs text-muted-foreground">Máximo 5MB por imagen, hasta {MAX_IMAGES_PER_PROPERTY} imágenes.</p>
+
+        {uploadError && (
+          <p role="alert" className="text-sm text-red-600">
+            {uploadError}
+          </p>
+        )}
         {state.errors?.images && (
           <p role="alert" className="text-sm text-red-600">
             {state.errors.images}

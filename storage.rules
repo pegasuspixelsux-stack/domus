@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // All uploads for this app go through the Admin SDK on the server
+    // (lib/properties/upload-actions.ts), which bypasses these rules using
+    // service-account trust. Deny all direct client access as defense in
+    // depth, matching firestore.rules.
+    //
+    // Note: property photos are still publicly viewable via the tokened
+    // download URLs the upload action generates (the same
+    // `firebaseStorageDownloadTokens` mechanism the Firebase Console's own
+    // "Get Download URL" button uses) — Firebase serves a request whose
+    // `alt=media&token=...` matches an object's stored token regardless of
+    // these rules. That's intentional: those are public marketing photos.
+    // This rule only blocks anonymous listing/reads that don't have the
+    // token.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
