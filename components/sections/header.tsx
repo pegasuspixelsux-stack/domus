@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 const NAV_LINKS = [
   { href: "/propiedades", label: "Propiedades" },
   { href: "/nosotros", label: "Nosotros" },
-  { href: "#testimonios", label: "Testimonios" },
+  { href: "/precalificacion", label: "Contacto" },
 ];
 
 /**
@@ -61,15 +61,6 @@ export function Header() {
             </Link>
           ))}
         </nav>
-
-        <Button
-          variant="link"
-          href="/precalificacion"
-          invert={!scrolled}
-          className="hidden md:inline-flex"
-        >
-          Contactar
-        </Button>
 
         <button
           type="button"
