@@ -4,7 +4,6 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { submitChatPrequalifyLead } from "@/lib/leads/actions";
-import { AFTER_HOURS_MESSAGE } from "@/lib/leads/business-hours";
 import { PRIVACY_DISCLAIMER } from "@/lib/leads/copy";
 import {
   BATHROOMS_OPTIONS,
@@ -102,6 +101,17 @@ const STEPS: readonly Step[] = [
 
 const GREETING =
   "Hola, soy el asistente de Domus. Le voy a hacer algunas preguntas breves para conectarlo con el asesor indicado — elija la opción que prefiera en cada paso.";
+
+// Chat-specific confirmation copy — deliberately not shared with the other
+// lead-capture forms (they keep the "usted" register used everywhere else
+// on the site; mixing it with these two would look inconsistent). Which one
+// shows is decided server-side, per submission, by createLeadRecord's
+// business-hours check (Mon–Fri 9:00–19:00, America/Montevideo) — never a
+// fixed/static choice.
+const CHAT_SUCCESS_MESSAGE =
+  "¡Gracias por tus datos! Un asesor senior ya fue notificado y se pondrá en contacto contigo en los próximos minutos.";
+const CHAT_AFTER_HOURS_MESSAGE =
+  "Gracias por tu consulta. Nuestras oficinas están cerradas en este momento, pero tu perfil y preferencias ya quedaron guardados de forma segura. Un asesor senior se pondrá en contacto a primera hora.";
 
 interface TranscriptEntry {
   id: string;
@@ -204,9 +214,7 @@ export function AgentChat() {
           {
             id: "confirmation",
             role: "bot",
-            text: result.afterHours
-              ? AFTER_HOURS_MESSAGE
-              : "¡Listo! Un asesor experto se pondrá en contacto con usted a la brevedad con las mejores opciones.",
+            text: result.afterHours ? CHAT_AFTER_HOURS_MESSAGE : CHAT_SUCCESS_MESSAGE,
           },
         ]);
       } else {

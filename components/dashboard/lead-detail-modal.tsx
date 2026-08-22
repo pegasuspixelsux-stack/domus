@@ -94,36 +94,34 @@ export function LeadDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-8">
       <div className="flex max-h-[85vh] w-full max-w-2xl flex-col gap-6 overflow-y-auto bg-background p-8">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="font-serif text-2xl">{lead.name}</h2>
-              {lead.qualificationScore !== undefined && (
-                <span
-                  className="border border-accent px-2 py-0.5 text-xs tracking-[0.1em] text-accent uppercase"
-                  title="Cantidad de señales de calificación (presupuesto, objetivo, zona, dormitorios, baños, urgencia, financiación, obstáculo, horario para llamar, cuándo quiere visitar) que aportó el visitante en el chat"
-                >
-                  Calificación {lead.qualificationScore}/{CHAT_QUALIFICATION_MAX}
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {[lead.email, lead.phone].filter(Boolean).join(" · ")}
-            </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="font-serif text-2xl">{lead.name}</h2>
+            {lead.email && <p className="text-sm text-muted-foreground">{lead.email}</p>}
+            {lead.phone && <p className="text-sm text-muted-foreground">{lead.phone}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-xs tracking-[0.2em] text-muted-foreground uppercase hover:text-accent"
+            className="shrink-0 text-xs tracking-[0.2em] text-muted-foreground uppercase hover:text-accent"
           >
             Cerrar
           </button>
         </div>
 
-        {lead.notes && (
-          <div className="flex flex-col gap-2 border border-foreground/10 bg-muted-background/40 p-4">
-            <span className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Notas</span>
-            <p className="text-sm leading-relaxed whitespace-pre-line">{lead.notes}</p>
+        {lead.qualificationScore !== undefined && (
+          <div
+            className="flex items-center justify-between gap-4 border border-foreground/10 bg-muted-background/40 px-6 py-5"
+            title="Cantidad de señales de calificación (presupuesto, objetivo, zona, dormitorios, baños, urgencia, financiación, obstáculo, horario para llamar, cuándo quiere visitar) que aportó el visitante en el chat"
+          >
+            <div>
+              <span className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Calificación</span>
+              <p className="mt-1 text-xs text-muted-foreground">Señales de precalificación aportadas por el visitante</p>
+            </div>
+            <p className="font-serif text-5xl leading-none whitespace-nowrap text-accent">
+              {lead.qualificationScore}
+              <span className="text-lg text-muted-foreground">/{CHAT_QUALIFICATION_MAX}</span>
+            </p>
           </div>
         )}
 
@@ -212,6 +210,13 @@ export function LeadDetailModal({
             {pending ? "Guardando…" : "Agregar"}
           </Button>
         </form>
+
+        {lead.notes && (
+          <div className="flex flex-col gap-2 border border-foreground/10 bg-muted-background/40 p-4">
+            <span className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Notas</span>
+            <p className="text-sm leading-relaxed whitespace-pre-line">{lead.notes}</p>
+          </div>
+        )}
       </div>
     </div>
   );
