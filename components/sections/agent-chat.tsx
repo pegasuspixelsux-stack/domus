@@ -1,50 +1,188 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { MessageCircle, Send, X } from "lucide-react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { submitChatPrequalifyLead } from "@/lib/leads/actions";
+import {
+  BATHROOMS_OPTIONS,
+  BEDROOMS_OPTIONS,
+  BUDGET_OPTIONS,
+  FINANCING_OPTIONS,
+  GOAL_OPTIONS,
+  OBSTACLE_OPTIONS,
+  URGENCY_OPTIONS,
+  ZONE_OPTIONS,
+} from "@/lib/leads/prequalify-validation";
 
-interface PropertyResult {
-  id: string;
-  title: string;
-  location: string;
-  tag: string;
-  price: string;
-  bedrooms: number;
-  bathrooms: number;
-  areaM2: number;
-  url: string;
+interface ChoiceStep {
+  id: "goal" | "zone" | "bedrooms" | "bathrooms" | "budget" | "urgency" | "financing" | "obstacle";
+  kind: "choice";
+  prompt: string;
+  options: readonly string[];
 }
 
+interface TextStep {
+  id: "name" | "email" | "phone";
+  kind: "text";
+  prompt: string;
+  placeholder: string;
+  validate: (value: string) => string | null;
+}
+
+type Step = ChoiceStep | TextStep;
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
- * Floating chat widget, mounted once in the root layout so it's available
- * on every public page. Hidden on /login, /forgot-password, and the entire
- * /dashboard area — those aren't visitor-facing, and an admin/sales user
- * mid-task doesn't need a lead-capture bot popping up over their own tools.
+ * A fixed, button-driven script — not an LLM. Every visitor gets the same
+ * questions in the same order, mapped 1:1 to the /precalificacion wizard's
+ * field set (see lib/leads/prequalify-validation.ts) so a chat-sourced lead
+ * looks identical to a wizard-sourced one in the dashboard. Zero API calls,
+ * zero token cost, zero rate-limit risk.
  */
+const STEPS: readonly Step[] = [
+  { id: "goal", kind: "choice", prompt: "Para orientarlo mejor — ¿qué tipo de búsqueda es esta?", options: GOAL_OPTIONS },
+  { id: "zone", kind: "choice", prompt: "¿Tiene alguna zona en mente?", options: ZONE_OPTIONS },
+  { id: "bedrooms", kind: "choice", prompt: "¿Cuántos dormitorios está buscando?", options: BEDROOMS_OPTIONS },
+  { id: "bathrooms", kind: "choice", prompt: "¿Y cuántos baños?", options: BATHROOMS_OPTIONS },
+  { id: "budget", kind: "choice", prompt: "¿Cuál es su presupuesto estimado?", options: BUDGET_OPTIONS },
+  { id: "urgency", kind: "choice", prompt: "¿Con qué urgencia está buscando?", options: URGENCY_OPTIONS },
+  { id: "financing", kind: "choice", prompt: "¿Cómo piensa financiar la compra?", options: FINANCING_OPTIONS },
+  { id: "obstacle", kind: "choice", prompt: "¿Hay algún obstáculo que debamos tener en cuenta?", options: OBSTACLE_OPTIONS },
+  {
+    id: "name",
+    kind: "text",
+    prompt: "Excelente. Para conectarlo con un asesor de Domus, ¿cuál es su nombre?",
+    placeholder: "Su nombre completo",
+    validate: (value) => (value.trim() ? null : "Ingrese su nombre."),
+  },
+  {
+    id: "email",
+    kind: "text",
+    prompt: "¿Su correo electrónico?",
+    placeholder: "nombre@ejemplo.com",
+    validate: (value) => (EMAIL_PATTERN.test(value.trim()) ? null : "Ingrese un correo electrónico válido."),
+  },
+  {
+    id: "phone",
+    kind: "text",
+    prompt: "¿Y un teléfono de contacto?",
+    placeholder: "+598 99 123 456",
+    validate: (value) => (value.trim() ? null : "Ingrese un teléfono."),
+  },
+] as const;
+
+const GREETING =
+  "Hola, soy el asistente de Domus. Le voy a hacer algunas preguntas breves para conectarlo con el asesor indicado — elija la opción que prefiera en cada paso.";
+
+interface TranscriptEntry {
+  id: string;
+  role: "bot" | "user";
+  text: string;
+}
+
+type SubmitState = { status: "idle" } | { status: "pending" } | { status: "success" } | { status: "error"; message: string };
+
+function initialTranscript(): TranscriptEntry[] {
+  return [
+    { id: "greeting", role: "bot", text: GREETING },
+    { id: `prompt-${STEPS[0].id}`, role: "bot", text: STEPS[0].prompt },
+  ];
+}
+
 export function AgentChat() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
-  });
+  const [transcript, setTranscript] = useState<TranscriptEntry[]>(initialTranscript);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [textInput, setTextInput] = useState("");
+  const [textError, setTextError] = useState<string | null>(null);
+  const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
 
   const hidden = pathname.startsWith("/dashboard") || pathname === "/login" || pathname === "/forgot-password";
   if (hidden) return null;
 
-  const busy = status === "submitted" || status === "streaming";
+  const currentStep = stepIndex < STEPS.length ? STEPS[stepIndex] : null;
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    const text = input.trim();
-    if (!text || busy) return;
-    sendMessage({ text });
-    setInput("");
+  function advance(stepId: string, value: string, label: string) {
+    setTranscript((prev) => [...prev, { id: `answer-${stepId}`, role: "user", text: label }]);
+    setAnswers((prev) => ({ ...prev, [stepId]: value }));
+
+    const nextIndex = stepIndex + 1;
+    setStepIndex(nextIndex);
+
+    if (nextIndex < STEPS.length) {
+      const next = STEPS[nextIndex];
+      setTranscript((prev) => [...prev, { id: `prompt-${next.id}`, role: "bot", text: next.prompt }]);
+    } else {
+      void submitAnswers({ ...answers, [stepId]: value });
+    }
   }
+
+  function handleChoice(option: string) {
+    if (!currentStep || currentStep.kind !== "choice") return;
+    advance(currentStep.id, option, option);
+  }
+
+  function handleTextSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!currentStep || currentStep.kind !== "text") return;
+
+    const value = textInput.trim();
+    const error = currentStep.validate(value);
+    if (error) {
+      setTextError(error);
+      return;
+    }
+
+    setTextError(null);
+    setTextInput("");
+    advance(currentStep.id, value, value);
+  }
+
+  async function submitAnswers(finalAnswers: Record<string, string>) {
+    setSubmitState({ status: "pending" });
+    setTranscript((prev) => [...prev, { id: "submitting", role: "bot", text: "Enviando su consulta…" }]);
+
+    try {
+      const result = await submitChatPrequalifyLead({
+        name: finalAnswers.name,
+        email: finalAnswers.email,
+        phone: finalAnswers.phone,
+        goal: finalAnswers.goal,
+        zone: finalAnswers.zone,
+        bedrooms: finalAnswers.bedrooms,
+        bathrooms: finalAnswers.bathrooms,
+        budget: finalAnswers.budget,
+        urgency: finalAnswers.urgency,
+        financing: finalAnswers.financing,
+        obstacle: finalAnswers.obstacle,
+      });
+
+      if (result.success) {
+        setSubmitState({ status: "success" });
+        setTranscript((prev) => [
+          ...prev,
+          {
+            id: "confirmation",
+            role: "bot",
+            text: "¡Listo! Un asesor experto se pondrá en contacto con usted a la brevedad con las mejores opciones.",
+          },
+        ]);
+      } else {
+        setSubmitState({ status: "error", message: result.error });
+        setTranscript((prev) => [...prev, { id: "submit-error", role: "bot", text: result.error }]);
+      }
+    } catch {
+      const message = "No pudimos enviar su consulta. Intente de nuevo en unos minutos.";
+      setSubmitState({ status: "error", message });
+      setTranscript((prev) => [...prev, { id: "submit-error", role: "bot", text: message }]);
+    }
+  }
+
+  const busy = submitState.status === "pending";
 
   return (
     <>
@@ -61,102 +199,69 @@ export function AgentChat() {
         <div className="fixed right-6 bottom-24 z-50 flex h-[70vh] max-h-[600px] w-[calc(100vw-3rem)] max-w-sm flex-col border border-foreground/10 bg-background shadow-[0_16px_48px_rgba(0,0,0,0.2)]">
           <div className="border-b border-foreground/10 px-5 py-4">
             <p className="font-serif text-lg">Asistente Domus</p>
-            <p className="text-xs text-muted-foreground">Consulte por propiedades o deje sus datos</p>
+            <p className="text-xs text-muted-foreground">Precalificación rápida en un par de pasos</p>
           </div>
 
           <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
-            {messages.length === 0 && (
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                Hola, soy el asistente de Domus. Cuénteme qué tipo de propiedad está buscando —
-                zona, dormitorios o presupuesto — y le muestro opciones del portfolio.
-              </p>
-            )}
-
-            {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+            {transcript.map((entry) => (
+              <div key={entry.id} className={`flex ${entry.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[85%] px-4 py-2 text-sm leading-relaxed ${
-                    message.role === "user" ? "bg-foreground text-background" : "bg-muted-background text-foreground"
+                    entry.role === "user" ? "bg-foreground text-background" : "bg-muted-background text-foreground"
                   }`}
                 >
-                  {message.parts.map((part, index) => {
-                    if (part.type === "text") {
-                      return (
-                        <span key={index} className="whitespace-pre-wrap">
-                          {part.text}
-                        </span>
-                      );
-                    }
-
-                    if (part.type === "tool-searchProperties" && part.state === "output-available") {
-                      const output = part.output as { count: number; properties: PropertyResult[] };
-                      if (output.properties.length === 0) return null;
-                      return (
-                        <div key={index} className="mt-2 flex flex-col gap-2">
-                          {output.properties.map((property) => (
-                            <Link
-                              key={property.id}
-                              href={property.url}
-                              className="block border border-foreground/15 bg-background p-3 text-foreground transition-colors duration-300 hover:border-accent"
-                            >
-                              <span className="block font-serif text-base">{property.title}</span>
-                              <span className="mt-1 block text-xs text-muted-foreground">
-                                {property.location} — {property.price}
-                              </span>
-                              <span className="mt-1 block text-xs text-muted-foreground uppercase">
-                                {property.bedrooms} dorm · {property.bathrooms} baños · {property.areaM2} m²
-                              </span>
-                            </Link>
-                          ))}
-                        </div>
-                      );
-                    }
-
-                    if (part.type === "tool-prequalifyLead" && part.state === "output-available") {
-                      const output = part.output as { success: boolean; error?: string };
-                      if (!output.success) {
-                        return (
-                          <p key={index} className="mt-2 text-xs text-muted-foreground italic">
-                            {output.error}
-                          </p>
-                        );
-                      }
-                      return (
-                        <div key={index} className="mt-2 border-l-4 border-l-accent bg-background p-3 text-foreground">
-                          <p className="text-sm leading-relaxed">
-                            ¡Listo! Un asesor experto se pondrá en contacto contigo a la brevedad con
-                            las mejores opciones.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return null;
-                  })}
+                  <span className="whitespace-pre-wrap">{entry.text}</span>
                 </div>
               </div>
             ))}
 
-            {busy && <p className="text-xs text-muted-foreground uppercase">Escribiendo…</p>}
+            {currentStep?.kind === "choice" && (
+              <div className="flex flex-wrap gap-2">
+                {currentStep.options.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => handleChoice(option)}
+                    className="border border-foreground/30 px-3 py-1.5 text-xs text-foreground transition-colors duration-300 hover:border-accent hover:text-accent"
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {busy && <p className="text-xs text-muted-foreground uppercase">Enviando…</p>}
           </div>
 
-          <form onSubmit={handleSubmit} className="flex items-center gap-3 border-t border-foreground/10 p-3">
-            <input
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="Escriba su consulta…"
-              disabled={busy}
-              className="h-10 min-w-0 flex-1 border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
-            />
-            <button
-              type="submit"
-              disabled={busy || !input.trim()}
-              aria-label="Enviar mensaje"
-              className="flex h-10 w-10 shrink-0 items-center justify-center text-foreground transition-colors duration-300 hover:text-accent disabled:opacity-30"
-            >
-              <Send size={18} />
-            </button>
-          </form>
+          {currentStep?.kind === "text" && (
+            <form onSubmit={handleTextSubmit} className="flex flex-col gap-2 border-t border-foreground/10 p-3">
+              <div className="flex items-center gap-3">
+                <input
+                  value={textInput}
+                  onChange={(event) => {
+                    setTextInput(event.target.value);
+                    setTextError(null);
+                  }}
+                  placeholder={currentStep.placeholder}
+                  autoFocus
+                  className="h-10 min-w-0 flex-1 border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={!textInput.trim()}
+                  aria-label="Enviar respuesta"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center text-foreground transition-colors duration-300 hover:text-accent disabled:opacity-30"
+                >
+                  <Send size={18} />
+                </button>
+              </div>
+              {textError && (
+                <p role="alert" className="text-xs text-red-600">
+                  {textError}
+                </p>
+              )}
+            </form>
+          )}
         </div>
       )}
     </>

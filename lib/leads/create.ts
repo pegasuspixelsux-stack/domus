@@ -20,10 +20,11 @@ export interface NewLeadInput {
 
 /**
  * Single choke point for every *publicly sourced* lead — the /precalificacion
- * wizard, a property page's inquiry form, and the chat assistant's
- * prequalifyLead tool all go through this instead of writing to Firestore
- * directly, so the sales-team alert email fires exactly once, for every
- * public entry point, without each call site having to remember to send it.
+ * wizard, a property page's inquiry form, and the chat widget's deterministic
+ * prequalification script (submitChatPrequalifyLead) all go through this
+ * instead of writing to Firestore directly, so the sales-team alert email
+ * fires exactly once, for every public entry point, without each call site
+ * having to remember to send it.
  *
  * Deliberately not used by `createLead` in actions.ts — that one is a
  * PIPELINE_ROLES staff member adding a lead themselves from the dashboard,

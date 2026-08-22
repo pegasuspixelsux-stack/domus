@@ -11,7 +11,20 @@ import { pickRoundRobinAssignee } from "./assignment";
 import { ACTIVITY_TYPES, STATUS_LABELS } from "./constants";
 import { createLeadRecord } from "./create";
 import { getActivities } from "./data";
-import { composePrequalifyNotes, validatePrequalifyInput } from "./prequalify-validation";
+import {
+  BATHROOMS_OPTIONS,
+  BEDROOMS_OPTIONS,
+  BUDGET_OPTIONS,
+  composeChatQualificationNotes,
+  composePrequalifyNotes,
+  computeQualificationScore,
+  FINANCING_OPTIONS,
+  GOAL_OPTIONS,
+  OBSTACLE_OPTIONS,
+  URGENCY_OPTIONS,
+  validatePrequalifyInput,
+  ZONE_OPTIONS,
+} from "./prequalify-validation";
 import { validateLeadInput } from "./validation";
 import type { Activity, ActivityType, LeadStatus } from "./types";
 
@@ -204,6 +217,79 @@ export async function createPrequalifiedLead(
 
   revalidatePath("/dashboard/pipeline");
   return { success: true, values: raw };
+}
+
+export interface ChatPrequalifyAnswers {
+  name: string;
+  email: string;
+  phone: string;
+  goal?: string;
+  zone?: string;
+  bedrooms?: string;
+  bathrooms?: string;
+  budget?: string;
+  urgency?: string;
+  financing?: string;
+  obstacle?: string;
+}
+
+export type ChatPrequalifyResult = { success: true } | { success: false; error: string };
+
+/** Drops any value not found in its known option list — defense in depth, same rationale as validatePrequalifyInput. */
+function sanitizeOption(value: string | undefined, options: readonly string[]): string | undefined {
+  return value && options.includes(value) ? value : undefined;
+}
+
+/**
+ * Server-side counterpart to the chat widget's deterministic prequalification
+ * flow (components/sections/agent-chat.tsx) — called directly as an async
+ * function from that client component, the same pattern `updateLeadStatus`
+ * and `reassignLead` below already use. No LLM involved: the widget is a
+ * fixed button-driven script, so this just validates and stores whatever it
+ * collected. Public/unauthenticated like `createPrequalifiedLead`, so every
+ * optional answer is checked against its known option list rather than
+ * trusted as-is — a direct call could pass anything.
+ */
+export async function submitChatPrequalifyLead(answers: ChatPrequalifyAnswers): Promise<ChatPrequalifyResult> {
+  const validated = validateLeadInput({
+    name: answers.name,
+    email: answers.email,
+    phone: answers.phone,
+    source: "Chat de Precalificación",
+  });
+  if (!validated.valid) {
+    return { success: false, error: Object.values(validated.errors).join(" ") };
+  }
+
+  const assignee = await pickRoundRobinAssignee();
+  if (!assignee) {
+    return {
+      success: false,
+      error: "No hay asesores disponibles en este momento. Escríbanos por WhatsApp.",
+    };
+  }
+
+  const qualification = {
+    goal: sanitizeOption(answers.goal, GOAL_OPTIONS),
+    zone: sanitizeOption(answers.zone, ZONE_OPTIONS),
+    bedrooms: sanitizeOption(answers.bedrooms, BEDROOMS_OPTIONS),
+    bathrooms: sanitizeOption(answers.bathrooms, BATHROOMS_OPTIONS),
+    budget: sanitizeOption(answers.budget, BUDGET_OPTIONS),
+    urgency: sanitizeOption(answers.urgency, URGENCY_OPTIONS),
+    financing: sanitizeOption(answers.financing, FINANCING_OPTIONS),
+    obstacle: sanitizeOption(answers.obstacle, OBSTACLE_OPTIONS),
+  };
+
+  await createLeadRecord({
+    ...validated.data,
+    notes: composeChatQualificationNotes(qualification),
+    qualificationScore: computeQualificationScore(qualification),
+    assignedTo: assignee.uid,
+  });
+
+  revalidatePath("/dashboard/pipeline");
+  revalidatePath("/dashboard/leads");
+  return { success: true };
 }
 
 async function assertCanManageLead(leadId: string) {
