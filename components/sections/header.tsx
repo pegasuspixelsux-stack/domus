@@ -2,7 +2,7 @@
 
 import { Menu, Search, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +12,8 @@ const NAV_LINKS = [
   { href: "/precalificacion", label: "Contacto" },
 ];
 
+const INICIO_LINK = { href: "/", label: "Inicio" };
+
 /**
  * Fixed nav overlaying the hero. Transparent + light text over the hero
  * image at the top of the page; once scrolled it gains a blurred surface
@@ -19,6 +21,7 @@ const NAV_LINKS = [
  * legible over every section beneath it.
  */
 export function Header() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -28,6 +31,9 @@ export function Header() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // "Inicio" only makes sense as a way back — hide it on the page it points to.
+  const navLinks = pathname === "/" ? NAV_LINKS : [INICIO_LINK, ...NAV_LINKS];
 
   // An open mobile menu needs a solid, legible surface regardless of scroll
   // position — it can open right over the transparent hero.
@@ -56,7 +62,7 @@ export function Header() {
             scrolled ? "text-muted-foreground" : "text-background/80"
           }`}
         >
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="transition-colors duration-500 hover:text-accent">
               {link.label}
             </Link>
@@ -78,7 +84,7 @@ export function Header() {
 
       {menuOpen && (
         <nav className="mt-6 flex flex-col gap-1 border-t border-foreground/10 pt-6 md:hidden">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}

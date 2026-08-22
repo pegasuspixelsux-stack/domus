@@ -19,6 +19,10 @@ export default function PrecalificacionPage() {
             sizes="100vw"
             className="object-cover object-center"
           />
+          {/* Full-height dark overlay, same tint as the homepage Hero and the other mini heroes. */}
+          <div className="absolute inset-0 bg-foreground/70" />
+
+          {/* Localized scrim behind the text block only — deepens it further. */}
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/80 to-transparent" />
 
           <Reveal className="relative mx-auto flex w-full max-w-[1600px] flex-col gap-6">
