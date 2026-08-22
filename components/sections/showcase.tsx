@@ -31,7 +31,7 @@ export async function Showcase() {
           <RevealGroup className="-mx-8 flex snap-x snap-mandatory gap-6 overflow-x-auto px-8 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-x-8 sm:gap-y-16 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
             {properties.map((property) => (
               <RevealGroupItem key={property.id} className="w-[80%] shrink-0 snap-center sm:w-auto sm:shrink">
-                <PropertyCard property={property} grayscale={false} />
+                <PropertyCard property={property} />
               </RevealGroupItem>
             ))}
           </RevealGroup>

@@ -3,15 +3,10 @@
 import { type ChangeEvent, useActionState, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import type { PropertyActionState } from "@/lib/properties/actions";
-import type { Property, PropertyStatus } from "@/lib/properties/types";
+import { PROPERTY_STATUSES } from "@/lib/properties/constants";
+import type { Property } from "@/lib/properties/types";
 import { uploadPropertyImages } from "@/lib/properties/upload-actions";
 import { MAX_IMAGE_BYTES, MAX_IMAGES_PER_PROPERTY } from "@/lib/properties/upload-constants";
-
-const STATUS_OPTIONS: { value: PropertyStatus; label: string }[] = [
-  { value: "available", label: "Disponible" },
-  { value: "reserved", label: "Reservada" },
-  { value: "sold", label: "Vendida" },
-];
 
 const MAX_DIMENSION = 2000;
 const JPEG_QUALITY = 0.85;
@@ -212,7 +207,7 @@ export function PropertyForm({
           defaultValue={state.values?.status ?? property?.status ?? "available"}
           className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground focus-visible:border-accent focus-visible:outline-none"
         >
-          {STATUS_OPTIONS.map((option) => (
+          {PROPERTY_STATUSES.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>

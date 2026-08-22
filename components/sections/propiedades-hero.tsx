@@ -4,8 +4,10 @@ import { SectionLabel } from "@/components/ui/section-label";
 
 /**
  * Mini hero for the /propiedades listing page: min-h-[40vh], shown plain
- * (no grayscale/hover effect) since the photo itself is the point — only
- * the bottom half carries a scrim, just enough to keep the text legible.
+ * (no grayscale/hover effect) since the photo itself is the point. A
+ * full-height dark overlay (same tint as the homepage Hero and the Nosotros
+ * mini hero) keeps the whole image consistently dark, with an extra scrim
+ * behind the text block on top of it for legibility.
  */
 export function PropiedadesHero() {
   return (
@@ -18,7 +20,10 @@ export function PropiedadesHero() {
         sizes="100vw"
         className="object-cover object-center"
       />
-      {/* Localized scrim behind the text block only — the rest of the photo stays plain. */}
+      {/* Full-height dark overlay, same tint as the homepage Hero. */}
+      <div className="absolute inset-0 bg-foreground/70" />
+
+      {/* Localized scrim behind the text block only — deepens it further. */}
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/80 to-transparent" />
 
       <Reveal className="relative mx-auto flex w-full max-w-[1600px] flex-col gap-6">

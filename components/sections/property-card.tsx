@@ -6,17 +6,15 @@ import type { Property } from "@/lib/properties/types";
  * The card treatment shared by the homepage showcase and the /propiedades
  * grid: photo, then title with price top-right (where asked for), location,
  * and a tag/bed/bath/area stat line. Kept in one place so both call sites
- * can't drift.
+ * can't drift. Just a slow zoom on hover — no grayscale-to-color darken
+ * effect (removed; every call site had already opted out of it or now does).
  */
 export function PropertyCard({
   property,
   showPrice = false,
-  grayscale = true,
 }: {
   property: Property;
   showPrice?: boolean;
-  /** The signature grayscale → color hover reveal. Off for the homepage showcase. */
-  grayscale?: boolean;
 }) {
   return (
     <Link href={`/propiedades/${property.id}`} className="group flex flex-col gap-4">
@@ -26,9 +24,7 @@ export function PropertyCard({
           <img
             src={property.images[0]}
             alt={property.title}
-            className={`absolute inset-0 h-full w-full origin-center scale-100 object-cover transition-[transform,filter] duration-[1800ms] ease-out group-hover:scale-105 ${
-              grayscale ? "grayscale group-hover:grayscale-0" : ""
-            }`}
+            className="absolute inset-0 h-full w-full origin-center scale-100 object-cover transition-transform duration-[1800ms] ease-out group-hover:scale-105"
           />
         </div>
       ) : (

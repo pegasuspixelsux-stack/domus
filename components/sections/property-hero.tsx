@@ -5,14 +5,10 @@ import { useState } from "react";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
 import { Reveal } from "@/components/ui/reveal";
 import { SectionLabel } from "@/components/ui/section-label";
+import { PROPERTY_STATUS_LABELS } from "@/lib/properties/constants";
 import type { Property } from "@/lib/properties/types";
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
-
-const STATUS_LABELS: Record<string, string> = {
-  reserved: "Reservada",
-  sold: "Vendida",
-};
 
 /**
  * Full-bleed hero for a property detail page: cycles through every photo,
@@ -97,7 +93,7 @@ export function PropertyHero({ property }: { property: Property }) {
           <SectionLabel invert>{property.location}</SectionLabel>
           {property.status !== "available" && (
             <span className="text-xs tracking-[0.2em] text-accent uppercase">
-              {STATUS_LABELS[property.status]}
+              {PROPERTY_STATUS_LABELS[property.status]}
             </span>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { CtaFooter } from "@/components/sections/cta-footer";
 import { Header } from "@/components/sections/header";
 import { PropertyListing } from "@/components/sections/property-listing";
@@ -14,7 +15,12 @@ export default async function PropiedadesPage() {
       <main className="flex flex-1 flex-col">
         <PropiedadesHero />
 
-        <PropertyListing properties={available} />
+        {/* PropertyListing reads ?q= via useSearchParams, which requires a
+            Suspense boundary on an otherwise-static page — see that
+            component's doc comment. */}
+        <Suspense>
+          <PropertyListing properties={available} />
+        </Suspense>
 
         <CtaFooter />
       </main>

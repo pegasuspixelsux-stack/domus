@@ -4,6 +4,7 @@ import { ImportPropertiesButton } from "@/components/dashboard/import-properties
 import { Button } from "@/components/ui/button";
 import { PROPERTY_MANAGER_ROLES } from "@/lib/auth/rbac";
 import { requireRole } from "@/lib/auth/require-role";
+import { PROPERTY_STATUS_LABELS } from "@/lib/properties/constants";
 import { getProperties } from "@/lib/properties/data";
 
 export default async function PropertiesPage() {
@@ -43,7 +44,7 @@ export default async function PropertiesPage() {
                   <td className="py-3 pr-4">
                     {property.currency} {property.price.toLocaleString("es-UY")}
                   </td>
-                  <td className="py-3 pr-4 capitalize">{property.status}</td>
+                  <td className="py-3 pr-4">{PROPERTY_STATUS_LABELS[property.status]}</td>
                   <td className="py-3 pr-4">{new Date(property.updatedAt).toLocaleDateString("es-UY")}</td>
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-4">

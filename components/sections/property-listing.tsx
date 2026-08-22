@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RevealGroup, RevealGroupItem } from "@/components/ui/reveal-group";
@@ -14,8 +15,15 @@ const PAGE_SIZE = 9;
  * results grid on the right. Filter option lists (location, tag) are
  * derived from the properties actually passed in rather than a fixed enum,
  * since both fields are free text on the `Property` model.
+ *
+ * The keyword field seeds itself from `?q=` (the header search box lands
+ * here — see components/sections/header.tsx) but otherwise behaves just
+ * like every other filter: client-side only, not synced back to the URL as
+ * the visitor keeps typing, matching how location/tag/price already work.
  */
 export function PropertyListing({ properties }: { properties: Property[] }) {
+  const searchParams = useSearchParams();
+
   const locations = useMemo(
     () => Array.from(new Set(properties.map((p) => p.location))).sort((a, b) => a.localeCompare(b)),
     [properties],
@@ -25,6 +33,7 @@ export function PropertyListing({ properties }: { properties: Property[] }) {
     [properties],
   );
 
+  const [keyword, setKeyword] = useState(() => searchParams.get("q") ?? "");
   const [location, setLocation] = useState("");
   const [tag, setTag] = useState("");
   const [minBedrooms, setMinBedrooms] = useState(0);
@@ -34,7 +43,12 @@ export function PropertyListing({ properties }: { properties: Property[] }) {
   const filtered = useMemo(() => {
     const min = minPrice ? Number(minPrice) : null;
     const max = maxPrice ? Number(maxPrice) : null;
+    const needle = keyword.trim().toLowerCase();
     return properties.filter((property) => {
+      if (needle) {
+        const haystack = `${property.title} ${property.location} ${property.tag} ${property.description}`.toLowerCase();
+        if (!haystack.includes(needle)) return false;
+      }
       if (location && property.location !== location) return false;
       if (tag && property.tag !== tag) return false;
       if (minBedrooms && property.bedrooms < minBedrooms) return false;
@@ -42,9 +56,9 @@ export function PropertyListing({ properties }: { properties: Property[] }) {
       if (max !== null && property.price > max) return false;
       return true;
     });
-  }, [properties, location, tag, minBedrooms, minPrice, maxPrice]);
+  }, [properties, keyword, location, tag, minBedrooms, minPrice, maxPrice]);
 
-  const hasActiveFilters = Boolean(location || tag || minBedrooms || minPrice || maxPrice);
+  const hasActiveFilters = Boolean(keyword || location || tag || minBedrooms || minPrice || maxPrice);
 
   const [page, setPage] = useState(1);
 
@@ -53,13 +67,14 @@ export function PropertyListing({ properties }: { properties: Property[] }) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
-  }, [location, tag, minBedrooms, minPrice, maxPrice]);
+  }, [keyword, location, tag, minBedrooms, minPrice, maxPrice]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   function clearFilters() {
+    setKeyword("");
     setLocation("");
     setTag("");
     setMinBedrooms(0);
@@ -82,6 +97,20 @@ export function PropertyListing({ properties }: { properties: Property[] }) {
                 Limpiar
               </button>
             )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="keyword" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Buscar
+            </label>
+            <input
+              id="keyword"
+              type="text"
+              placeholder="Título, zona, tipo…"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              className="h-12 w-full border-b border-foreground/40 bg-transparent px-0 text-sm text-foreground placeholder:text-muted-foreground/60 focus-visible:border-accent focus-visible:outline-none"
+            />
           </div>
 
           <FilterSelect id="location" label="Ubicación" value={location} onChange={setLocation} options={locations} />

@@ -18,6 +18,11 @@ export function NosotrosHero() {
         sizes="100vw"
         className="object-cover object-center grayscale transition-[transform,filter] duration-[2000ms] ease-out group-hover:scale-105 group-hover:grayscale-0"
       />
+      {/* Full-height dark overlay, same tint as the homepage Hero, so the
+          image reads consistently dark everywhere — not just toward the
+          text corner like the scrim below. */}
+      <div className="absolute inset-0 bg-foreground/70" />
+
       {/* Scrim for text legibility — deepens toward the bottom-left content. */}
       <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/40 to-foreground/5" />
 
