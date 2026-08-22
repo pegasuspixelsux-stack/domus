@@ -55,6 +55,22 @@ export const BEDROOMS_OPTIONS = ["1", "2", "3", "4", "5 o más", "Prefiero no di
 
 export const BATHROOMS_OPTIONS = ["1", "2", "3", "4 o más", "Prefiero no divulgar"];
 
+export const CALL_TIME_OPTIONS = [
+  "Mañana (9 a 12h)",
+  "Tarde (12 a 18h)",
+  "Noche (18 a 21h)",
+  "Cualquier horario",
+  "Prefiero no divulgar",
+];
+
+export const VISIT_TIMING_OPTIONS = [
+  "Esta semana",
+  "Próxima semana",
+  "En las próximas dos semanas",
+  "Aún sin definir",
+  "Prefiero no divulgar",
+];
+
 export interface PrequalifyInput {
   name: string;
   email: string;
@@ -67,6 +83,8 @@ export interface PrequalifyInput {
   urgency: string;
   financing: string;
   obstacle: string;
+  callTime: string;
+  visitTiming: string;
   notes: string;
 }
 
@@ -95,19 +113,28 @@ export function validatePrequalifyInput(input: {
   urgency: string;
   financing: string;
   obstacle: string;
+  callTime: string;
+  visitTiming: string;
   notes: string;
 }): PrequalifyValidationResult {
   const errors: PrequalifyValidationErrors = {};
 
   if (!input.name.trim()) errors.name = "El nombre es obligatorio.";
 
-  if (!input.email.trim()) {
-    errors.email = "El correo electrónico es obligatorio.";
-  } else if (!EMAIL_PATTERN.test(input.email.trim())) {
+  // Name plus at least one contact method (email or phone) — not both required.
+  // See validateLeadInput in ./validation.ts, which follows the same rule.
+  const email = input.email.trim();
+  const phone = input.phone.trim();
+
+  if (email && !EMAIL_PATTERN.test(email)) {
     errors.email = "Ingrese un correo electrónico válido.";
   }
 
-  if (!input.phone.trim()) errors.phone = "El teléfono es obligatorio.";
+  if (!email && !phone) {
+    const message = "Ingrese al menos un correo electrónico o un teléfono de contacto.";
+    errors.email = errors.email ?? message;
+    errors.phone = message;
+  }
 
   if (!BUDGET_OPTIONS.includes(input.budget)) errors.budget = "Seleccione un presupuesto.";
   if (!GOAL_OPTIONS.includes(input.goal)) errors.goal = "Seleccione un objetivo.";
@@ -117,6 +144,8 @@ export function validatePrequalifyInput(input: {
   if (!URGENCY_OPTIONS.includes(input.urgency)) errors.urgency = "Seleccione una urgencia.";
   if (!FINANCING_OPTIONS.includes(input.financing)) errors.financing = "Seleccione una opción.";
   if (!OBSTACLE_OPTIONS.includes(input.obstacle)) errors.obstacle = "Seleccione una opción.";
+  if (!CALL_TIME_OPTIONS.includes(input.callTime)) errors.callTime = "Seleccione una opción.";
+  if (!VISIT_TIMING_OPTIONS.includes(input.visitTiming)) errors.visitTiming = "Seleccione una opción.";
 
   if (input.notes.length > MAX_NOTES_LENGTH) {
     errors.notes = `Máximo ${MAX_NOTES_LENGTH} caracteres.`;
@@ -130,8 +159,8 @@ export function validatePrequalifyInput(input: {
     valid: true,
     data: {
       name: input.name.trim(),
-      email: input.email.trim(),
-      phone: input.phone.trim(),
+      email,
+      phone,
       budget: input.budget,
       goal: input.goal,
       zone: input.zone,
@@ -140,6 +169,8 @@ export function validatePrequalifyInput(input: {
       urgency: input.urgency,
       financing: input.financing,
       obstacle: input.obstacle,
+      callTime: input.callTime,
+      visitTiming: input.visitTiming,
       notes: input.notes.trim(),
     },
   };
@@ -154,9 +185,11 @@ const PREQUALIFY_LABELS: Record<string, string> = {
   urgency: "Urgencia",
   financing: "Financiamiento",
   obstacle: "Obstáculo",
+  callTime: "Horario para llamar",
+  visitTiming: "Cuándo quiere visitar",
 };
 
-/** All eight qualification signals tracked by both the /precalificacion wizard and the chat assistant. */
+/** All ten qualification signals tracked by both the /precalificacion wizard and the chat assistant. */
 const QUALIFICATION_FIELDS = [
   "budget",
   "goal",
@@ -166,12 +199,14 @@ const QUALIFICATION_FIELDS = [
   "urgency",
   "financing",
   "obstacle",
+  "callTime",
+  "visitTiming",
 ] as const;
 
 /** Upper bound of `computeQualificationScore` — every chat-sourced lead's score is out of this many signals. */
 export const CHAT_QUALIFICATION_MAX = QUALIFICATION_FIELDS.length;
 
-/** Composes the /precalificacion wizard's eight required answers into one free-text note. */
+/** Composes the /precalificacion wizard's ten required answers into one free-text note. */
 export function composePrequalifyNotes(data: {
   budget: string;
   goal: string;
@@ -181,6 +216,8 @@ export function composePrequalifyNotes(data: {
   urgency: string;
   financing: string;
   obstacle: string;
+  callTime: string;
+  visitTiming: string;
   notes: string;
 }): string {
   const lines = QUALIFICATION_FIELDS.map((key) => `${PREQUALIFY_LABELS[key]}: ${data[key]}`);
@@ -191,7 +228,7 @@ export function composePrequalifyNotes(data: {
 }
 
 /**
- * Chat-sourced leads rarely have all eight wizard fields — the visitor gives
+ * Chat-sourced leads rarely have all ten wizard fields — the visitor gives
  * whatever comes up in conversation. Composes only the fields actually
  * present, unlike composePrequalifyNotes which assumes the full wizard set.
  */
@@ -204,6 +241,8 @@ export function composeChatQualificationNotes(data: {
   urgency?: string;
   financing?: string;
   obstacle?: string;
+  callTime?: string;
+  visitTiming?: string;
   notes?: string;
 }): string {
   const lines: string[] = [];
@@ -234,6 +273,8 @@ export function computeQualificationScore(data: {
   urgency?: string;
   financing?: string;
   obstacle?: string;
+  callTime?: string;
+  visitTiming?: string;
 }): number {
   return QUALIFICATION_FIELDS.filter((key) => Boolean(data[key])).length;
 }

@@ -4,14 +4,18 @@ import { useActionState, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createPrequalifiedLead } from "@/lib/leads/actions";
 import type { PrequalifyActionState } from "@/lib/leads/actions";
+import { AFTER_HOURS_MESSAGE } from "@/lib/leads/business-hours";
+import { CONTACT_METHOD_HINT, PRIVACY_DISCLAIMER } from "@/lib/leads/copy";
 import {
   BATHROOMS_OPTIONS,
   BEDROOMS_OPTIONS,
   BUDGET_OPTIONS,
+  CALL_TIME_OPTIONS,
   FINANCING_OPTIONS,
   GOAL_OPTIONS,
   OBSTACLE_OPTIONS,
   URGENCY_OPTIONS,
+  VISIT_TIMING_OPTIONS,
   ZONE_OPTIONS,
 } from "@/lib/leads/prequalify-validation";
 
@@ -19,7 +23,11 @@ const initialState: PrequalifyActionState = {};
 
 const STEPS = [
   { number: 1, label: "Perfil Inicial", fields: ["budget", "zone", "bedrooms", "bathrooms", "goal"] },
-  { number: 2, label: "Intención y Financiamiento", fields: ["urgency", "financing", "obstacle"] },
+  {
+    number: 2,
+    label: "Intención y Financiamiento",
+    fields: ["urgency", "financing", "obstacle", "callTime", "visitTiming"],
+  },
   { number: 3, label: "Contacto", fields: ["name", "email", "phone"] },
 ] as const;
 
@@ -50,6 +58,8 @@ export function PrequalificationWizard() {
   const [urgency, setUrgency] = useState(() => state.values?.urgency ?? "");
   const [financing, setFinancing] = useState(() => state.values?.financing ?? "");
   const [obstacle, setObstacle] = useState(() => state.values?.obstacle ?? "");
+  const [callTime, setCallTime] = useState(() => state.values?.callTime ?? "");
+  const [visitTiming, setVisitTiming] = useState(() => state.values?.visitTiming ?? "");
 
   useEffect(() => {
     if (!state.errors) return;
@@ -66,8 +76,9 @@ export function PrequalificationWizard() {
       <div className="mx-auto max-w-[600px] py-16 text-center">
         <p className="font-serif text-2xl">Gracias, {state.values?.name ?? ""}.</p>
         <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Recibimos su información — un asesor se pondrá en contacto a la brevedad para ayudarlo
-          a encontrar la propiedad correcta.
+          {state.afterHours
+            ? AFTER_HOURS_MESSAGE
+            : "Recibimos su información — un asesor se pondrá en contacto a la brevedad para ayudarlo a encontrar la propiedad correcta."}
         </p>
       </div>
     );
@@ -103,12 +114,15 @@ export function PrequalificationWizard() {
           <Select label="Urgencia" name="urgency" options={URGENCY_OPTIONS} error={state.errors?.urgency} value={urgency} onChange={setUrgency} />
           <Select label="Financiamiento" name="financing" options={FINANCING_OPTIONS} error={state.errors?.financing} value={financing} onChange={setFinancing} />
           <Select label="Principal obstáculo" name="obstacle" options={OBSTACLE_OPTIONS} error={state.errors?.obstacle} value={obstacle} onChange={setObstacle} />
+          <Select label="Mejor horario para llamarlo" name="callTime" options={CALL_TIME_OPTIONS} error={state.errors?.callTime} value={callTime} onChange={setCallTime} />
+          <Select label="¿Cuándo quiere visitar la propiedad?" name="visitTiming" options={VISIT_TIMING_OPTIONS} error={state.errors?.visitTiming} value={visitTiming} onChange={setVisitTiming} />
         </div>
 
         <div className={step === 3 ? "flex flex-col gap-6" : "hidden"}>
           <Field label="Nombre" name="name" error={state.errors?.name} defaultValue={state.values?.name} />
           <Field label="Correo Electrónico" name="email" type="email" error={state.errors?.email} defaultValue={state.values?.email} />
           <Field label="Teléfono" name="phone" error={state.errors?.phone} defaultValue={state.values?.phone} />
+          <p className="-mt-2 text-xs text-muted-foreground">{CONTACT_METHOD_HINT}</p>
           <div className="flex flex-col gap-2">
             <label htmlFor="notes" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Cuéntenos más (opcional)
@@ -153,6 +167,8 @@ export function PrequalificationWizard() {
             </Button>
           )}
         </div>
+
+        {step === STEPS.length && <p className="text-xs text-muted-foreground">{PRIVACY_DISCLAIMER}</p>}
       </form>
     </div>
   );

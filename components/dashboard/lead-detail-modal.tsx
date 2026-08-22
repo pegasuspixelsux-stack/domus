@@ -101,14 +101,14 @@ export function LeadDetailModal({
               {lead.qualificationScore !== undefined && (
                 <span
                   className="border border-accent px-2 py-0.5 text-xs tracking-[0.1em] text-accent uppercase"
-                  title="Cantidad de señales de calificación (presupuesto, objetivo, zona, dormitorios, baños, urgencia, financiación, obstáculo) que aportó el visitante en el chat"
+                  title="Cantidad de señales de calificación (presupuesto, objetivo, zona, dormitorios, baños, urgencia, financiación, obstáculo, horario para llamar, cuándo quiere visitar) que aportó el visitante en el chat"
                 >
                   Calificación {lead.qualificationScore}/{CHAT_QUALIFICATION_MAX}
                 </span>
               )}
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              {lead.email} · {lead.phone}
+              {[lead.email, lead.phone].filter(Boolean).join(" · ")}
             </p>
           </div>
           <button

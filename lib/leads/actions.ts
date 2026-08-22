@@ -15,6 +15,7 @@ import {
   BATHROOMS_OPTIONS,
   BEDROOMS_OPTIONS,
   BUDGET_OPTIONS,
+  CALL_TIME_OPTIONS,
   composeChatQualificationNotes,
   composePrequalifyNotes,
   computeQualificationScore,
@@ -23,6 +24,7 @@ import {
   OBSTACLE_OPTIONS,
   URGENCY_OPTIONS,
   validatePrequalifyInput,
+  VISIT_TIMING_OPTIONS,
   ZONE_OPTIONS,
 } from "./prequalify-validation";
 import { validateLeadInput } from "./validation";
@@ -81,6 +83,8 @@ export async function createLead(
 export interface PropertyInquiryState {
   errors?: Record<string, string>;
   success?: boolean;
+  /** True when the lead came in outside business hours — see lib/leads/business-hours.ts. */
+  afterHours?: boolean;
   values?: {
     name: string;
     email: string;
@@ -135,7 +139,7 @@ export async function createPropertyInquiry(
     };
   }
 
-  await createLeadRecord({
+  const { afterHours } = await createLeadRecord({
     ...result.data,
     source: `Ficha de Propiedad — ${property.title}`,
     propertyId: property.id,
@@ -143,12 +147,14 @@ export async function createPropertyInquiry(
   });
 
   revalidatePath("/dashboard/pipeline");
-  return { success: true };
+  return { success: true, afterHours };
 }
 
 export interface PrequalifyActionState {
   errors?: Record<string, string>;
   success?: boolean;
+  /** True when the lead came in outside business hours — see lib/leads/business-hours.ts. */
+  afterHours?: boolean;
   values?: {
     name: string;
     email: string;
@@ -161,6 +167,8 @@ export interface PrequalifyActionState {
     urgency: string;
     financing: string;
     obstacle: string;
+    callTime: string;
+    visitTiming: string;
     notes: string;
   };
 }
@@ -169,7 +177,7 @@ export interface PrequalifyActionState {
  * Public counterpart to `createLead` for the /precalificacion wizard — no
  * auth required, and no salesperson picker in the form (unlike
  * `createPropertyInquiry`), so the lead is round-robin assigned instead.
- * The six qualification answers aren't stored as their own fields; they're
+ * The qualification answers aren't stored as their own fields; they're
  * composed into `notes` alongside anything the visitor typed themselves.
  */
 export async function createPrequalifiedLead(
@@ -188,6 +196,8 @@ export async function createPrequalifiedLead(
     urgency: String(formData.get("urgency") ?? ""),
     financing: String(formData.get("financing") ?? ""),
     obstacle: String(formData.get("obstacle") ?? ""),
+    callTime: String(formData.get("callTime") ?? ""),
+    visitTiming: String(formData.get("visitTiming") ?? ""),
     notes: String(formData.get("notes") ?? ""),
   };
 
@@ -206,7 +216,7 @@ export async function createPrequalifiedLead(
 
   const { name, email, phone, ...qualification } = result.data;
 
-  await createLeadRecord({
+  const { afterHours } = await createLeadRecord({
     name,
     email,
     phone,
@@ -216,7 +226,7 @@ export async function createPrequalifiedLead(
   });
 
   revalidatePath("/dashboard/pipeline");
-  return { success: true, values: raw };
+  return { success: true, afterHours, values: raw };
 }
 
 export interface ChatPrequalifyAnswers {
@@ -231,9 +241,13 @@ export interface ChatPrequalifyAnswers {
   urgency?: string;
   financing?: string;
   obstacle?: string;
+  callTime?: string;
+  visitTiming?: string;
 }
 
-export type ChatPrequalifyResult = { success: true } | { success: false; error: string };
+export type ChatPrequalifyResult =
+  | { success: true; afterHours: boolean }
+  | { success: false; error: string };
 
 /** Drops any value not found in its known option list — defense in depth, same rationale as validatePrequalifyInput. */
 function sanitizeOption(value: string | undefined, options: readonly string[]): string | undefined {
@@ -278,9 +292,11 @@ export async function submitChatPrequalifyLead(answers: ChatPrequalifyAnswers): 
     urgency: sanitizeOption(answers.urgency, URGENCY_OPTIONS),
     financing: sanitizeOption(answers.financing, FINANCING_OPTIONS),
     obstacle: sanitizeOption(answers.obstacle, OBSTACLE_OPTIONS),
+    callTime: sanitizeOption(answers.callTime, CALL_TIME_OPTIONS),
+    visitTiming: sanitizeOption(answers.visitTiming, VISIT_TIMING_OPTIONS),
   };
 
-  await createLeadRecord({
+  const { afterHours } = await createLeadRecord({
     ...validated.data,
     notes: composeChatQualificationNotes(qualification),
     qualificationScore: computeQualificationScore(qualification),
@@ -289,7 +305,66 @@ export async function submitChatPrequalifyLead(answers: ChatPrequalifyAnswers): 
 
   revalidatePath("/dashboard/pipeline");
   revalidatePath("/dashboard/leads");
-  return { success: true };
+  return { success: true, afterHours };
+}
+
+export interface WhatsappInterceptAnswers {
+  name: string;
+  phone: string;
+  propertyId: string;
+  budget?: string;
+  urgency?: string;
+}
+
+export type WhatsappInterceptResult =
+  | { success: true; afterHours: boolean }
+  | { success: false; error: string };
+
+/**
+ * Server-side counterpart to the WhatsApp intercept modal on a property page
+ * (components/sections/whatsapp-intercept-modal.tsx) — captures the visitor
+ * as a lead tagged to the property they were viewing *before* they leave for
+ * WhatsApp, so an inquiry that never actually gets typed into WhatsApp isn't
+ * a lost lead. Deliberately minimal — name and phone only, no email, per the
+ * modal's own quick-capture design — and round-robin assigned like
+ * `createPrequalifiedLead`, since there's no salesperson picker in this
+ * flow. The property id is re-verified against Firestore rather than
+ * trusted from the client, same rationale as `createPropertyInquiry`.
+ */
+export async function submitWhatsappIntercept(answers: WhatsappInterceptAnswers): Promise<WhatsappInterceptResult> {
+  const name = answers.name.trim();
+  const phone = answers.phone.trim();
+  if (!name) return { success: false, error: "Ingrese su nombre." };
+  if (!phone) return { success: false, error: "Ingrese su teléfono." };
+
+  const property = await getProperty(answers.propertyId);
+  if (!property) {
+    return { success: false, error: "No se pudo identificar la propiedad." };
+  }
+
+  const assignee = await pickRoundRobinAssignee();
+  if (!assignee) {
+    return { success: false, error: "No hay asesores disponibles en este momento." };
+  }
+
+  const qualification = {
+    budget: sanitizeOption(answers.budget, BUDGET_OPTIONS),
+    urgency: sanitizeOption(answers.urgency, URGENCY_OPTIONS),
+  };
+
+  const { afterHours } = await createLeadRecord({
+    name,
+    email: "",
+    phone,
+    source: `WhatsApp — ${property.title}`,
+    propertyId: property.id,
+    notes: composeChatQualificationNotes(qualification),
+    assignedTo: assignee.uid,
+  });
+
+  revalidatePath("/dashboard/pipeline");
+  revalidatePath("/dashboard/leads");
+  return { success: true, afterHours };
 }
 
 async function assertCanManageLead(leadId: string) {

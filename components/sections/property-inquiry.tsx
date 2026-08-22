@@ -1,27 +1,27 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RevealGroup, RevealGroupItem } from "@/components/ui/reveal-group";
 import { SectionLabel } from "@/components/ui/section-label";
 import { createPropertyInquiry, type PropertyInquiryState } from "@/lib/leads/actions";
+import { AFTER_HOURS_MESSAGE } from "@/lib/leads/business-hours";
+import { CONTACT_METHOD_HINT, PRIVACY_DISCLAIMER } from "@/lib/leads/copy";
 import type { Property } from "@/lib/properties/types";
 import type { TeamMember } from "@/lib/team/data";
-
-// Falls back to an obviously-fake placeholder until a real business number
-// is set via NEXT_PUBLIC_WHATSAPP_NUMBER (digits only, country code first —
-// e.g. "598991234567" for a Uruguayan mobile).
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "000000000000";
+import { WhatsappInterceptModal } from "./whatsapp-intercept-modal";
 
 const initialState: PropertyInquiryState = {};
 
 /**
  * Property-specific call to action, placed below `PropertyDetails`: a
- * WhatsApp deep link pre-filled with the property name, plus an inquiry
- * form that creates a real Lead (assigned to whichever salesperson the
- * visitor picks) via `createPropertyInquiry`. The form is omitted entirely
- * when there are no active salespeople to assign to — only the WhatsApp
- * CTA shows in that case.
+ * "Escribir por WhatsApp" button that opens `WhatsappInterceptModal` (quick
+ * name/phone capture, tagged to this property, before redirecting to
+ * WhatsApp — see that component's doc comment), plus a full inquiry form
+ * that creates a real Lead (assigned to whichever salesperson the visitor
+ * picks) via `createPropertyInquiry`. The form is omitted entirely when
+ * there are no active salespeople to assign to — only the WhatsApp CTA
+ * shows in that case.
  */
 export function PropertyInquiry({
   property,
@@ -31,10 +31,7 @@ export function PropertyInquiry({
   salespeople: TeamMember[];
 }) {
   const [state, formAction, pending] = useActionState(createPropertyInquiry, initialState);
-
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `Hola, me interesa la propiedad "${property.title}".`,
-  )}`;
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
   return (
     <section id="consultar" className="border-b border-foreground/10 px-8 py-20 md:px-16 md:py-32">
@@ -48,7 +45,7 @@ export function PropertyInquiry({
             Escríbanos por WhatsApp para una respuesta inmediata, o déjenos sus datos y un asesor
             se pondrá en contacto.
           </p>
-          <Button variant="secondary" href={whatsappHref} target="_blank" className="w-fit">
+          <Button type="button" variant="secondary" onClick={() => setWhatsappModalOpen(true)} className="w-fit">
             Escribir por WhatsApp
           </Button>
         </RevealGroupItem>
@@ -57,7 +54,7 @@ export function PropertyInquiry({
           <RevealGroupItem className="w-full">
             {state.success ? (
               <p className="text-lg text-foreground/90">
-                Gracias — un asesor se pondrá en contacto a la brevedad.
+                {state.afterHours ? AFTER_HOURS_MESSAGE : "Gracias — un asesor se pondrá en contacto a la brevedad."}
               </p>
             ) : (
               <form action={formAction} className="flex w-full flex-col gap-4">
@@ -72,6 +69,7 @@ export function PropertyInquiry({
                   defaultValue={state.values?.email}
                 />
                 <Field label="Teléfono" name="phone" error={state.errors?.phone} defaultValue={state.values?.phone} />
+                <p className="-mt-2 text-xs text-muted-foreground">{CONTACT_METHOD_HINT}</p>
 
                 <div className="flex flex-col gap-2">
                   <label htmlFor="salespersonId" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
@@ -106,11 +104,16 @@ export function PropertyInquiry({
                 <Button type="submit" variant="primary" disabled={pending} className="w-full sm:w-auto">
                   {pending ? "Enviando…" : "Enviar Consulta"}
                 </Button>
+                <p className="text-xs text-muted-foreground">{PRIVACY_DISCLAIMER}</p>
               </form>
             )}
           </RevealGroupItem>
         )}
       </RevealGroup>
+
+      {whatsappModalOpen && (
+        <WhatsappInterceptModal property={property} onClose={() => setWhatsappModalOpen(false)} />
+      )}
     </section>
   );
 }

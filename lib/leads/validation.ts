@@ -8,6 +8,12 @@ export type LeadValidationResult =
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * Name and at least one contact method (email or phone) are required — not
+ * both. If email is filled in at all it must be well-formed, regardless of
+ * whether phone is also present; if both are left blank, the error lands on
+ * both fields so either one clears it.
+ */
 export function validateLeadInput(input: {
   name: string;
   email: string;
@@ -18,13 +24,19 @@ export function validateLeadInput(input: {
 
   if (!input.name.trim()) errors.name = "El nombre es obligatorio.";
 
-  if (!input.email.trim()) {
-    errors.email = "El correo electrónico es obligatorio.";
-  } else if (!EMAIL_PATTERN.test(input.email.trim())) {
+  const email = input.email.trim();
+  const phone = input.phone.trim();
+
+  if (email && !EMAIL_PATTERN.test(email)) {
     errors.email = "Ingrese un correo electrónico válido.";
   }
 
-  if (!input.phone.trim()) errors.phone = "El teléfono es obligatorio.";
+  if (!email && !phone) {
+    const message = "Ingrese al menos un correo electrónico o un teléfono de contacto.";
+    errors.email = errors.email ?? message;
+    errors.phone = message;
+  }
+
   if (!input.source.trim()) errors.source = "El origen es obligatorio.";
 
   if (Object.keys(errors).length > 0) {
@@ -35,8 +47,8 @@ export function validateLeadInput(input: {
     valid: true,
     data: {
       name: input.name.trim(),
-      email: input.email.trim(),
-      phone: input.phone.trim(),
+      email,
+      phone,
       source: input.source.trim(),
     },
   };

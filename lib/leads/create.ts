@@ -1,6 +1,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { getFirebaseAdminFirestore } from "@/lib/firebase/admin";
 import { sendLeadAlert } from "@/lib/email/sendLeadAlert";
+import { isWithinBusinessHours } from "./business-hours";
 import type { LeadStatus } from "./types";
 
 const COLLECTION = "leads";
@@ -20,7 +21,8 @@ export interface NewLeadInput {
 
 /**
  * Single choke point for every *publicly sourced* lead — the /precalificacion
- * wizard, a property page's inquiry form, and the chat widget's deterministic
+ * wizard, a property page's inquiry form, its WhatsApp intercept modal
+ * (submitWhatsappIntercept), and the chat widget's deterministic
  * prequalification script (submitChatPrequalifyLead) all go through this
  * instead of writing to Firestore directly, so the sales-team alert email
  * fires exactly once, for every public entry point, without each call site
@@ -30,9 +32,14 @@ export interface NewLeadInput {
  * PIPELINE_ROLES staff member adding a lead themselves from the dashboard,
  * self-assigned; alerting them about a lead they just typed in themselves
  * would be noise, not a notification.
+ *
+ * Also computes `afterHours` (see business-hours.ts) and returns it so each
+ * caller can show the right confirmation copy — same-day vs. next-morning
+ * follow-up — without duplicating the business-hours check itself.
  */
-export async function createLeadRecord(input: NewLeadInput): Promise<string> {
+export async function createLeadRecord(input: NewLeadInput): Promise<{ id: string; afterHours: boolean }> {
   const firestore = getFirebaseAdminFirestore();
+  const afterHours = !isWithinBusinessHours();
 
   const ref = await firestore
     .collection(COLLECTION)
@@ -65,5 +72,5 @@ export async function createLeadRecord(input: NewLeadInput): Promise<string> {
     notes: input.notes,
   });
 
-  return ref.id;
+  return { id: ref.id, afterHours };
 }

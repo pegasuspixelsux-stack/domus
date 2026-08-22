@@ -4,19 +4,33 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { submitChatPrequalifyLead } from "@/lib/leads/actions";
+import { AFTER_HOURS_MESSAGE } from "@/lib/leads/business-hours";
+import { PRIVACY_DISCLAIMER } from "@/lib/leads/copy";
 import {
   BATHROOMS_OPTIONS,
   BEDROOMS_OPTIONS,
   BUDGET_OPTIONS,
+  CALL_TIME_OPTIONS,
   FINANCING_OPTIONS,
   GOAL_OPTIONS,
   OBSTACLE_OPTIONS,
   URGENCY_OPTIONS,
+  VISIT_TIMING_OPTIONS,
   ZONE_OPTIONS,
 } from "@/lib/leads/prequalify-validation";
 
 interface ChoiceStep {
-  id: "goal" | "zone" | "bedrooms" | "bathrooms" | "budget" | "urgency" | "financing" | "obstacle";
+  id:
+    | "goal"
+    | "zone"
+    | "bedrooms"
+    | "bathrooms"
+    | "budget"
+    | "urgency"
+    | "financing"
+    | "obstacle"
+    | "callTime"
+    | "visitTiming";
   kind: "choice";
   prompt: string;
   options: readonly string[];
@@ -28,6 +42,8 @@ interface TextStep {
   prompt: string;
   placeholder: string;
   validate: (value: string) => string | null;
+  /** When it returns true, an "Omitir" link lets the visitor move on without answering this step. */
+  skippable?: (answers: Record<string, string>) => boolean;
 }
 
 type Step = ChoiceStep | TextStep;
@@ -40,6 +56,11 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * field set (see lib/leads/prequalify-validation.ts) so a chat-sourced lead
  * looks identical to a wizard-sourced one in the dashboard. Zero API calls,
  * zero token cost, zero rate-limit risk.
+ *
+ * Name is always required; email and phone are not both required — either
+ * one is enough contact info (matching validateLeadInput's rule), so each
+ * of those two steps can be skipped via its `skippable` check, as long as
+ * the other one was actually answered.
  */
 const STEPS: readonly Step[] = [
   { id: "goal", kind: "choice", prompt: "Para orientarlo mejor — ¿qué tipo de búsqueda es esta?", options: GOAL_OPTIONS },
@@ -50,6 +71,8 @@ const STEPS: readonly Step[] = [
   { id: "urgency", kind: "choice", prompt: "¿Con qué urgencia está buscando?", options: URGENCY_OPTIONS },
   { id: "financing", kind: "choice", prompt: "¿Cómo piensa financiar la compra?", options: FINANCING_OPTIONS },
   { id: "obstacle", kind: "choice", prompt: "¿Hay algún obstáculo que debamos tener en cuenta?", options: OBSTACLE_OPTIONS },
+  { id: "callTime", kind: "choice", prompt: "¿Cuál es un buen horario para llamarlo?", options: CALL_TIME_OPTIONS },
+  { id: "visitTiming", kind: "choice", prompt: "¿Cuándo le gustaría visitar la propiedad?", options: VISIT_TIMING_OPTIONS },
   {
     id: "name",
     kind: "text",
@@ -63,6 +86,8 @@ const STEPS: readonly Step[] = [
     prompt: "¿Su correo electrónico?",
     placeholder: "nombre@ejemplo.com",
     validate: (value) => (EMAIL_PATTERN.test(value.trim()) ? null : "Ingrese un correo electrónico válido."),
+    // Always skippable: phone alone is enough contact info, checked below.
+    skippable: () => true,
   },
   {
     id: "phone",
@@ -70,6 +95,8 @@ const STEPS: readonly Step[] = [
     prompt: "¿Y un teléfono de contacto?",
     placeholder: "+598 99 123 456",
     validate: (value) => (value.trim() ? null : "Ingrese un teléfono."),
+    // Only skippable once email has already been given — one contact method is required.
+    skippable: (answers) => Boolean(answers.email),
   },
 ] as const;
 
@@ -142,6 +169,13 @@ export function AgentChat() {
     advance(currentStep.id, value, value);
   }
 
+  function handleSkip() {
+    if (!currentStep || currentStep.kind !== "text") return;
+    setTextError(null);
+    setTextInput("");
+    advance(currentStep.id, "", "(sin especificar)");
+  }
+
   async function submitAnswers(finalAnswers: Record<string, string>) {
     setSubmitState({ status: "pending" });
     setTranscript((prev) => [...prev, { id: "submitting", role: "bot", text: "Enviando su consulta…" }]);
@@ -159,6 +193,8 @@ export function AgentChat() {
         urgency: finalAnswers.urgency,
         financing: finalAnswers.financing,
         obstacle: finalAnswers.obstacle,
+        callTime: finalAnswers.callTime,
+        visitTiming: finalAnswers.visitTiming,
       });
 
       if (result.success) {
@@ -168,7 +204,9 @@ export function AgentChat() {
           {
             id: "confirmation",
             role: "bot",
-            text: "¡Listo! Un asesor experto se pondrá en contacto con usted a la brevedad con las mejores opciones.",
+            text: result.afterHours
+              ? AFTER_HOURS_MESSAGE
+              : "¡Listo! Un asesor experto se pondrá en contacto con usted a la brevedad con las mejores opciones.",
           },
         ]);
       } else {
@@ -260,6 +298,16 @@ export function AgentChat() {
                   {textError}
                 </p>
               )}
+              {currentStep.skippable?.(answers) && (
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  className="self-start text-xs tracking-[0.1em] text-muted-foreground uppercase hover:text-accent"
+                >
+                  Omitir — no tengo este dato
+                </button>
+              )}
+              <p className="text-xs text-muted-foreground">{PRIVACY_DISCLAIMER}</p>
             </form>
           )}
         </div>

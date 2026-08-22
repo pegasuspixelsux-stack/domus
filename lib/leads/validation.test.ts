@@ -25,8 +25,13 @@ describe("validateLeadInput", () => {
     if (!result.valid) expect(result.errors.name).toBeDefined();
   });
 
-  it("rejects an empty email", () => {
+  it("accepts an empty email when a phone is provided", () => {
     const result = validateLeadInput({ ...validInput(), email: "" });
+    expect(result.valid).toBe(true);
+  });
+
+  it("rejects a malformed email even when a phone is provided", () => {
+    const result = validateLeadInput({ ...validInput(), email: "notanemail" });
     expect(result.valid).toBe(false);
     if (!result.valid) expect(result.errors.email).toBeDefined();
   });
@@ -54,10 +59,18 @@ describe("validateLeadInput", () => {
     expect(result.valid).toBe(true);
   });
 
-  it("rejects an empty phone", () => {
+  it("accepts an empty phone when an email is provided", () => {
     const result = validateLeadInput({ ...validInput(), phone: "  " });
+    expect(result.valid).toBe(true);
+  });
+
+  it("rejects when both email and phone are empty", () => {
+    const result = validateLeadInput({ ...validInput(), email: "", phone: "  " });
     expect(result.valid).toBe(false);
-    if (!result.valid) expect(result.errors.phone).toBeDefined();
+    if (!result.valid) {
+      expect(result.errors.email).toBeDefined();
+      expect(result.errors.phone).toBeDefined();
+    }
   });
 
   it("rejects an empty source", () => {
