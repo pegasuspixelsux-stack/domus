@@ -16,7 +16,9 @@ export function DashboardHeader({ navItems }: { navItems: NavItem[] }) {
   return (
     <header className="border-b border-foreground/10 px-8 py-6">
       <div className="flex items-center justify-between">
-        <span className="font-serif text-xl">Domus</span>
+        <Link href="/" className="font-serif text-xl transition-colors duration-500 hover:text-accent">
+          Domus
+        </Link>
 
         <nav className="hidden items-center gap-8 text-xs tracking-[0.2em] text-muted-foreground uppercase md:flex">
           {navItems.map((item) => (
