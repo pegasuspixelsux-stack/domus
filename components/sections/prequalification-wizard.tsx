@@ -94,7 +94,7 @@ export function PrequalificationWizard() {
                 step >= s.number ? "bg-accent" : "bg-foreground/15"
               }`}
             />
-            <span className="text-xs tracking-[0.15em] text-muted-foreground uppercase">
+            <span className="text-[10px] tracking-[0.08em] whitespace-nowrap text-muted-foreground uppercase">
               {s.number}. {s.label}
             </span>
           </div>
